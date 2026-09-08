@@ -1,0 +1,125 @@
+# Scheduled security scan.
+#
+# Separate from CI because it answers a different question. CI asks "did this change
+# introduce a vulnerability?" and must be actionable, so it ignores findings with no
+# available fix. This asks "is what we are running today still safe?" — which is a question
+# whose answer changes without anybody touching the code, because new CVEs are published
+# against base images and dependencies that were clean when they shipped.
+#
+# It reports everything, including unfixed findings, and files them in the Security tab
+# rather than failing a build nobody was waiting on.
+
+name: Security
+
+on:
+  schedule:
+    # Monday morning, so findings land at the start of a working week rather than on a
+    # Friday evening.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  images:
+    name: Scan images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+          - name: frontend
+            context: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          load: true
+          tags: helios-${{ matrix.name }}:scan
+
+      - name: Scan ${{ matrix.name }}
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: helios-${{ matrix.name }}:scan
+          format: sarif
+          output: trivy-${{ matrix.name }}.sarif
+          # Everything, unfixed included. This report is for triage, not for gating.
+          severity: LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+
+      - name: Upload findings
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.name }}.sarif
+          category: image-${{ matrix.name }}
+
+  dependencies:
+    name: Scan dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan the repository
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs.sarif
+          # Config scanning covers the Dockerfiles and compose files as well as the
+          # dependency manifests — a container running as root or a missing health check is
+          # a finding here too.
+          scanners: vuln,secret,config
+          severity: MEDIUM,HIGH,CRITICAL
+
+      - name: Upload findings
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: filesystem
+
+  python:
+    name: Audit Python dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: pip-audit
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          # Reports against the resolved tree rather than the loose bounds in
+          # requirements.txt, which is what is actually installed in the image.
+          pip install -r requirements.txt
+          pip-audit --strict --desc
+
+  node:
+    name: Audit Node dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: npm audit
+        working-directory: frontend
+        run: |
+          npm ci
+          npm audit --audit-level=high

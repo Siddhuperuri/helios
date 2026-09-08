@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Runtime state: cached upstream responses and the experiment store.
+# Regenerated on demand; must not be committed.
+backend/var/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment.
+#
+# The allowlist is inverted on purpose: ignore every .env* file, then re-admit the two
+# that are documentation. The previous rules listed `.env`, `.env.local` and
+# `.env.*.local`, which left `.env.production` — the one file that holds the JWT signing
+# key, the database password and the OAuth client secrets — perfectly committable.
+.env*
+!.env.example
+!.env.*.example
+
+# Local databases. The development fallback writes SQLite here; nothing durable in a real
+# deployment lives on a developer's disk.
+*.db
+*.db-wal
+*.db-shm
+
+# Load-test output
+loadtest/results/
+
+# TLS material. Never committed, in any form.
+deploy/nginx/certs/
+*.pem
+*.key
+*.crt
+
+# Logs and OS noise
+*.log
+.DS_Store
+Thumbs.db

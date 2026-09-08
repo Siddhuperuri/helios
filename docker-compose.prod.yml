@@ -1,0 +1,293 @@
+# Helios — production topology.
+#
+#                         ┌──────────────┐
+#                         │    Nginx     │   TLS, routing, edge rate limiting
+#                         └──────┬───────┘
+#              ┌─────────────────┼─────────────────┐
+#        /api/*│                                   │/*
+#     ┌────────▼────────┐                 ┌────────▼────────┐
+#     │ backend1..3     │                 │ frontend1..2    │
+#     │ FastAPI         │                 │ Next.js         │
+#     │ stateless       │                 │ stateless       │
+#     └────────┬────────┘                 └─────────────────┘
+#              │
+#      ┌───────┴────────┐
+#      │   PgBouncer    │  transaction pooling
+#      └───────┬────────┘
+#      ┌───────▼────────┐        ┌──────────────┐
+#      │  PostgreSQL    │        │    Redis     │
+#      └────────────────┘        └──────────────┘
+#
+# Three backends and two frontends are a *starting point*, not a derived answer. Capacity
+# should come from the load tests in loadtest/ — see docs/LOAD_TESTING.md — and the counts
+# here changed without touching a line of application code, which is the property that
+# matters.
+#
+# This file still has single points of failure: one PostgreSQL, one Redis, one Nginx. That
+# is honest for a single-host deployment and is not what a real production environment
+# should run. docs/DEPLOYMENT.md sets out the HA topology that replaces each of them.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#
+# Every secret below comes from the environment with no default. Compose fails on an unset
+# variable, which is the behaviour you want: a deployment that silently started with a
+# blank JWT secret would be worse than one that refused to start.
+
+name: helios
+
+x-backend-env: &backend-env
+  SOLAR_ENV: production
+  # Note the port: the backends talk to PgBouncer, never to PostgreSQL directly. That is
+  # the whole reason PgBouncer is here — connection count must not grow with replica count.
+  DATABASE_URL: postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@pgbouncer:6432/helios
+  REDIS_URL: redis://redis:6379/0
+  JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+  JWT_ACCESS_TTL_MIN: "${JWT_ACCESS_TTL_MIN:-15}"
+  JWT_REFRESH_TTL_DAYS: "${JWT_REFRESH_TTL_DAYS:-30}"
+  VERIFICATION_TOKEN_TTL_HOURS: "${VERIFICATION_TOKEN_TTL_HOURS:-24}"
+  PASSWORD_RESET_TOKEN_TTL_HOURS: "${PASSWORD_RESET_TOKEN_TTL_HOURS:-1}"
+
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:?EMAIL_PROVIDER must be set}
+  EMAIL_PROVIDER_API_KEY: ${EMAIL_PROVIDER_API_KEY:-}
+  EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:?EMAIL_FROM_ADDRESS must be set}
+  EMAIL_FROM_NAME: "${EMAIL_FROM_NAME:-Helios}"
+
+  GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+  GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+  GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-}
+  GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:-}
+  OAUTH_REDIRECT_BASE: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN must be set}
+  SOLAR_FRONTEND_BASE: ${PUBLIC_ORIGIN}
+  SOLAR_OAUTH_ALLOWED_REDIRECTS: ${PUBLIC_ORIGIN}
+  SOLAR_CORS_ORIGINS: ${PUBLIC_ORIGIN}
+
+  # The refresh cookie must never travel in the clear.
+  SOLAR_COOKIE_SECURE: "true"
+  SOLAR_COOKIE_SAMESITE: lax
+
+  # Exactly one proxy of ours sits in front: Nginx. The backend counts trusted hops from
+  # the right of X-Forwarded-For, so this number must match the topology — set it too high
+  # and a client can choose its own rate-limit identity by sending a header.
+  SOLAR_TRUSTED_PROXY_HOPS: "1"
+
+  SOLAR_JSON_LOGS: "true"
+  SOLAR_LOG_LEVEL: "${SOLAR_LOG_LEVEL:-INFO}"
+  SOLAR_RELEASE: "${SOLAR_RELEASE:-unknown}"
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SOLAR_TRACING_ENABLED: "${SOLAR_TRACING_ENABLED:-false}"
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+
+  # Small per-replica pool. PgBouncer multiplexes; a large pool here would put the
+  # connection count back where PgBouncer was introduced to stop it going.
+  SOLAR_DB_POOL_SIZE: "${SOLAR_DB_POOL_SIZE:-5}"
+  SOLAR_DB_MAX_OVERFLOW: "${SOLAR_DB_MAX_OVERFLOW:-5}"
+
+x-backend: &backend
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  image: helios-backend:${SOLAR_RELEASE:-latest}
+  environment: *backend-env
+  # `stop_grace_period` must exceed the application's own shutdown budget
+  # (SOLAR_SHUTDOWN_GRACE_S / uvicorn's --timeout-graceful-shutdown, both 45s). If Docker
+  # SIGKILLs first, the graceful drain is pointless and a rolling deploy drops the
+  # requests it was designed to protect.
+  stop_grace_period: 60s
+  restart: unless-stopped
+  depends_on:
+    pgbouncer:
+      condition: service_started
+    redis:
+      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
+  deploy:
+    resources:
+      limits:
+        # Model training is CPU-bound and single-threaded per request. Two cores per
+        # replica leaves headroom for concurrent short requests alongside one long one.
+        cpus: "2.0"
+        memory: 2G
+      reservations:
+        cpus: "0.5"
+        memory: 512M
+
+x-frontend: &frontend
+  build:
+    context: ./frontend
+    dockerfile: Dockerfile
+  image: helios-frontend:${SOLAR_RELEASE:-latest}
+  environment:
+    NODE_ENV: production
+    # Nginx routes /api/* to the backends, so the frontend does not normally see an API
+    # request at all. This is set so that if one ever reaches it, it resolves rather than
+    # hitting a dead loopback address inside the container.
+    SOLAR_BACKEND_ORIGIN: http://backend1:8000
+  stop_grace_period: 30s
+  restart: unless-stopped
+  deploy:
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 512M
+
+services:
+  # -------------------------------------------------------------------------------------
+  # Edge
+  # -------------------------------------------------------------------------------------
+  nginx:
+    # Pinned. `nginx:latest` would mean the load balancer changes version underneath a
+    # deployment nobody intended to change.
+    image: nginx:1.27.3-bookworm
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      # Mount certificates here and enable the TLS server block; see docs/DEPLOYMENT.md.
+      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
+      - frontend1
+      - frontend2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # -------------------------------------------------------------------------------------
+  # Application
+  # -------------------------------------------------------------------------------------
+  # Named replicas rather than `deploy.replicas`, because plain `docker compose` does not
+  # give replicas stable DNS names and the Nginx upstream needs to address them
+  # individually. Under Swarm or Kubernetes this collapses into one service with a replica
+  # count and a service DNS name — nothing in the application changes either way.
+  backend1: { <<: *backend, container_name: helios-backend-1 }
+  backend2: { <<: *backend, container_name: helios-backend-2 }
+  backend3: { <<: *backend, container_name: helios-backend-3 }
+
+  frontend1: { <<: *frontend, container_name: helios-frontend-1 }
+  frontend2: { <<: *frontend, container_name: helios-frontend-2 }
+
+  # -------------------------------------------------------------------------------------
+  # Migrations
+  # -------------------------------------------------------------------------------------
+  # One-shot, and ordered before the backends. Running migrations from each backend's
+  # entrypoint would mean three concurrent `alembic upgrade head` on every deploy; Alembic
+  # takes a lock so it would not corrupt anything, but two of the three would sit waiting
+  # and the deployment would be slower and noisier for no reason.
+  #
+  # Migrations connect straight to PostgreSQL, not through PgBouncer: DDL under transaction
+  # pooling is a bad combination, and this is a short-lived single connection.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: helios-backend:${SOLAR_RELEASE:-latest}
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@postgres:5432/helios
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # -------------------------------------------------------------------------------------
+  # Data
+  # -------------------------------------------------------------------------------------
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.23.1-p2
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+    volumes:
+      - ./deploy/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16.4-bookworm
+    environment:
+      POSTGRES_DB: helios
+      POSTGRES_USER: ${DB_USER:?DB_USER must be set}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    command:
+      - postgres
+      # WAL archiving is what makes point-in-time recovery possible. A nightly dump alone
+      # means the recovery point is "last midnight"; with WAL it is "any second since".
+      # See docs/BACKUP_AND_RECOVERY.md, which also covers restore testing — a backup
+      # nobody has restored is a hypothesis, not a backup.
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=test ! -f /var/lib/postgresql/wal_archive/%f && cp %p /var/lib/postgresql/wal_archive/%f
+      - -c
+      - max_wal_senders=3
+      - -c
+      - max_connections=100
+      # Kill a transaction left open by a crashed client, so it cannot hold locks forever.
+      # Comfortably above PgBouncer's own idle_transaction_timeout of 60s.
+      - -c
+      - idle_in_transaction_session_timeout=120000
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_wal:/var/lib/postgresql/wal_archive
+      - ./deploy/postgres/backups:/backups
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d helios"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7.4.1-bookworm
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory ${REDIS_MAXMEMORY:-1gb}
+      --maxmemory-policy volatile-lru
+      --save 900 1
+      --save 300 10
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+# ---------------------------------------------------------------------------------------
+# Notes on the Redis eviction policy
+# ---------------------------------------------------------------------------------------
+# `volatile-lru`, not `allkeys-lru`, and the difference matters. Every key this application
+# writes to Redis has a TTL — cache entries, rate-limit counters, refresh tokens, OAuth
+# state — so `volatile-lru` evicts from exactly that set under pressure. If a key ever
+# appears without a TTL, `allkeys-lru` would happily evict a live refresh token and sign
+# somebody out at random, whereas `volatile-lru` would surface the mistake as an
+# out-of-memory error instead of as an intermittent, unreproducible bug.
+
+volumes:
+  postgres_data:
+  postgres_wal:
+  redis_data:
+  nginx_logs:

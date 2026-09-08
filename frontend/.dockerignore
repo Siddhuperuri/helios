@@ -1,0 +1,23 @@
+# Anything that would make the build context large, non-reproducible, or leaky.
+
+node_modules
+.next
+out
+*.tsbuildinfo
+
+# Real environment files never enter an image. .env.example is documentation and is
+# excluded too — the image has no use for it.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+Dockerfile
+.dockerignore
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+coverage
+tests

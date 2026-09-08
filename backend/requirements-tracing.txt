@@ -1,0 +1,17 @@
+# Distributed tracing (optional).
+#
+# Install alongside requirements.txt when SOLAR_TRACING_ENABLED=true. Everything here is
+# automatic instrumentation: FastAPI, SQLAlchemy, Redis and urllib each contribute their
+# spans without a single manual span in the application code, which is why the trace shows
+# the weather fetch, the feature build, the model fit and the database separately without
+# anyone having had to annotate them.
+#
+# Kept out of the core image because it is a large transitive tree for a feature most
+# deployments leave off. app/observability/tracing.py degrades to a no-op without it.
+
+opentelemetry-sdk>=1.25
+opentelemetry-exporter-otlp-proto-http>=1.25
+opentelemetry-instrumentation-fastapi>=0.46b0
+opentelemetry-instrumentation-sqlalchemy>=0.46b0
+opentelemetry-instrumentation-redis>=0.46b0
+opentelemetry-instrumentation-urllib>=0.46b0

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <!--
+    Favicon, animated — reconstructed from icons8-sun.json (a Lottie file, which a
+    browser tab cannot render directly).
+
+    Every number below comes from that file rather than being redrawn by eye: the ray
+    polygon's sixteen vertices, both fill colours (#FF9800 and #FFEB3B, exact at 8-bit
+    precision), the loop length (28 frames at 24fps = 1.16667s), the rotation sweep
+    (0deg to 45deg) and the two scale pulses all match their source keyframes, including
+    the original easing curve (cubic-bezier(0.333, 0, 0.667, 1), the "Middle" and "Rays"
+    layers' own ease) rather than linear interpolation.
+
+    SVG's native animation (SMIL) needs no JavaScript, which matters here — a favicon has
+    nowhere to run a script. Support is solid in Chrome and Firefox; Safari has
+    historically shown only the first frame in the tab itself, so there the icon degrades
+    to the static sun rather than failing.
+  -->
+  <g transform="translate(24,24)">
+    <polygon
+      fill="#FF9800"
+      points="13,5 18,0 13,-5 13,-13 5,-13 0,-18 -5,-13 -13,-13 -13,-5 -18,0 -13,5 -13,13 -5,13 0,18 5,13 13,13"
+    >
+      <animateTransform
+        attributeName="transform"
+        type="rotate"
+        values="0;45"
+        keyTimes="0;1"
+        calcMode="spline"
+        keySplines="0.167 0.167 0.833 0.833"
+        dur="1.16667s"
+        repeatCount="indefinite"
+        additive="sum"
+      />
+      <animateTransform
+        attributeName="transform"
+        type="scale"
+        values="1;1.1;1"
+        keyTimes="0;0.5;1"
+        calcMode="spline"
+        keySplines="0.333 0 0.667 1;0.333 0 0.667 1"
+        dur="1.16667s"
+        repeatCount="indefinite"
+        additive="sum"
+      />
+    </polygon>
+  </g>
+  <g transform="translate(24,24)">
+    <circle cx="0" cy="0" r="11" fill="#FFEB3B">
+      <animateTransform
+        attributeName="transform"
+        type="scale"
+        values="1;1.05;1"
+        keyTimes="0;0.5;1"
+        calcMode="spline"
+        keySplines="0.333 0 0.667 1;0.333 0 0.667 1"
+        dur="1.16667s"
+        repeatCount="indefinite"
+        additive="sum"
+      />
+    </circle>
+  </g>
+</svg>

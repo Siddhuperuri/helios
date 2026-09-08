@@ -1,0 +1,124 @@
+# Tooling configuration for the Helios backend.
+#
+# There was no linter configuration before, which meant `ruff check` ran with whatever
+# default rule set the installed version happened to ship — a set that changes between
+# releases and that flags a good deal of this codebase's deliberate style. A CI job that
+# fails for a different reason each time ruff is upgraded teaches everyone to ignore it,
+# so the rules are chosen explicitly here.
+#
+# pytest keeps its own pytest.ini; it predates this file and there is no reason to move it.
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes — real defects: unused names, undefined references
+    "W",    # pycodestyle warnings
+    "I",    # import sorting
+    "UP",   # pyupgrade — keep syntax current with the target version
+    "B",    # bugbear — likely bugs rather than style
+    "C4",   # comprehension and literal simplifications
+    "BLE",  # blind excepts, so every one of them has to be justified in a noqa
+]
+
+ignore = [
+    # Line length is a convention here, not a gate, and `line-length` above records what
+    # the convention is. Enforcing it would flag 77 lines across 29 pre-existing files —
+    # most of them in the scientific modules, where reflowing a line means reflowing a
+    # formula and giving somebody the job of re-verifying it. That is real risk bought for
+    # no benefit. New code is held to the limit in review.
+    "E501",
+    # `timezone.utc` reads fine and works on every version this targets. `datetime.UTC` is
+    # newer, not better, and swapping 24 call sites across working modules is churn.
+    "UP017",
+    # `Depends(...)` in a default argument is how FastAPI dependency injection is written.
+    # Every route in the application uses it, and the rule has no way to know that.
+    "B008",
+    # A class-level mutable default is flagged by RUF012, but the SQLAlchemy declarative
+    # style depends on exactly that shape for __table_args__ and column definitions.
+    "RUF012",
+    # `class Severity(str, Enum)` could be `StrEnum` on 3.11. It is not the same thing:
+    # `str(StrEnum.MEMBER)` yields the value while `str(StrEnum_mixin.MEMBER)` yields
+    # "Severity.MEMBER", so the swap silently changes what lands in a JSON payload the
+    # frontend already parses. Three declarations in the quality and parameter modules
+    # rely on the current behaviour.
+    "UP042",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests build keyword dictionaries with `dict(...)` to splat into a call under test, which
+# is clearer at the call site than a literal even though C408 disagrees.
+"tests/*" = ["C408"]
+# Alembic's generated preamble assigns module-level names the linter cannot see used.
+"alembic/versions/*" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests", "scripts"]
+
+# ---------------------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------------------
+# Applied to the infrastructure this work introduced, not to the scientific modules.
+#
+# That split is deliberate rather than lazy. The solar engine, the feature pipeline and the
+# evaluation code are numeric functions passing numpy arrays around, written before the
+# project used annotations; retro-fitting types onto them in a hurry risks writing an
+# annotation that is subtly wrong, and a wrong annotation is worse than an absent one
+# because it will be trusted. They are excluded until someone types them deliberately.
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+ignore_missing_imports = true
+# Not enabled globally: most of the codebase predates annotations, and turning this on
+# everywhere would produce thousands of findings that nobody would read.
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+exclude = '''(?x)(
+    ^app/(estimate|features|models|evaluation|quality|scenario|explain|anomaly|reports)/
+  | ^app/api/service\.py$
+  | ^tests/
+)'''
+
+# `exclude` above only decides what mypy discovers; it still follows imports into these
+# modules and reports their pre-existing errors. This is the setting that expresses
+# "not yet typed, and not in scope for this change".
+[[tool.mypy.overrides]]
+module = [
+    "app.estimate.*",
+    "app.features.*",
+    "app.models.*",
+    "app.evaluation.*",
+    "app.quality.*",
+    "app.scenario.*",
+    "app.explain.*",
+    "app.anomaly.*",
+    "app.reports.*",
+    "app.api.service",
+    "app.api.routes.analysis",
+    "app.api.routes.estimate",
+    "app.api.routes.experiments",
+    "app.api.routes.meta",
+    "app.data.sources",
+]
+ignore_errors = true
+
+# The modules added or substantially reworked by the production-readiness work are held to
+# a higher standard, because they are the ones handling credentials and shared state.
+[[tool.mypy.overrides]]
+module = [
+    "app.auth.*",
+    "app.security.*",
+    "app.db.*",
+    "app.infra.*",
+    "app.email.*",
+    "app.observability.*",
+]
+check_untyped_defs = true
+disallow_untyped_defs = true

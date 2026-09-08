@@ -1,0 +1,74 @@
+# Helios backend dependencies.
+#
+# Lower bounds rather than pins. The application is deployed from an image built with
+# `pip install -r requirements.txt`, and the image tag is what pins a release; pinning here
+# as well would mean a security patch to any of these needed a code change to pick up.
+# CI runs against the resolved versions and the image is scanned before it ships.
+
+# --------------------------------------------------------------------------------------
+# Core scientific stack
+# --------------------------------------------------------------------------------------
+# The solar engine. Unchanged by the production-readiness work, and deliberately so.
+numpy>=1.26
+pandas>=2.2
+scipy>=1.13
+scikit-learn>=1.5
+
+# --------------------------------------------------------------------------------------
+# API
+# --------------------------------------------------------------------------------------
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+
+# --------------------------------------------------------------------------------------
+# Durable state
+# --------------------------------------------------------------------------------------
+SQLAlchemy>=2.0.30
+alembic>=1.13
+# The PostgreSQL driver. psycopg 3 rather than psycopg2: it is the maintained line, ships
+# a pure-python fallback, and works correctly behind PgBouncer in transaction-pooling mode.
+# The [binary] extra avoids needing a compiler in the image.
+psycopg[binary]>=3.2
+
+# --------------------------------------------------------------------------------------
+# Shared ephemeral state
+# --------------------------------------------------------------------------------------
+redis>=5.0
+# Serves the `memory://` development and test backend. It implements the real Redis
+# command surface, so the stand-in behaves like the thing it stands in for rather than
+# drifting from it in exactly the places that matter. Small and pure-python, which is why
+# it is a runtime dependency rather than a test-only one.
+fakeredis>=2.23
+
+# --------------------------------------------------------------------------------------
+# Authentication
+# --------------------------------------------------------------------------------------
+# Nothing cryptographic is hand-rolled. Argon2id hashing, JWT signing and the OAuth2
+# client all come from the maintained reference implementations.
+argon2-cffi>=23.1
+PyJWT>=2.9
+Authlib>=1.3
+requests>=2.32          # Authlib's sync transport, and the OAuth token/profile calls
+email-validator>=2.2
+
+# --------------------------------------------------------------------------------------
+# Observability
+# --------------------------------------------------------------------------------------
+prometheus-client>=0.20
+
+# Error reporting is optional at runtime — with no SENTRY_DSN the module does nothing —
+# but the package is light enough to carry so that enabling it is a configuration change
+# rather than a rebuild.
+sentry-sdk>=2.0
+
+# Distributed tracing lives in requirements-tracing.txt. It pulls the OpenTelemetry SDK,
+# an exporter and four instrumentation packages, which is a large transitive tree to put
+# in every image for something most deployments leave switched off. With those packages
+# absent, app/observability/tracing.py logs once and continues.
+
+# --------------------------------------------------------------------------------------
+# Testing
+# --------------------------------------------------------------------------------------
+pytest>=8.0
+httpx>=0.27

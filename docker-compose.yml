@@ -1,0 +1,127 @@
+# Helios — development stack.
+#
+# One of everything: one backend, one frontend, one PostgreSQL, one Redis. That is the
+# right shape for a laptop, and it is deliberately *not* the shape of production. The
+# multi-instance topology — three backends, two frontends, Nginx, PgBouncer — is in
+# docker-compose.prod.yml, and the difference between the two files is the point:
+#
+#   development    this file           single instances, no LB, hot reload, plaintext
+#   production     .prod.yml           3 backends + 2 frontends behind Nginx, PgBouncer
+#   HA production  docs/DEPLOYMENT.md  managed PostgreSQL + Redis, ≥2 LBs, no SPOFs
+#
+# Even here the backend talks to real PostgreSQL and real Redis rather than the SQLite and
+# in-process fallbacks. Those fallbacks exist so `pytest` runs with nothing installed; a
+# developer running the stack should be exercising the same code paths as production.
+
+name: helios-dev
+
+services:
+  postgres:
+    image: postgres:16.4-bookworm
+    environment:
+      POSTGRES_DB: helios
+      POSTGRES_USER: helios
+      # Development only. Production credentials come from a secret store; see
+      # docs/DEPLOYMENT.md.
+      POSTGRES_PASSWORD: helios-dev-password
+      # Fail fast on a misconfigured locale rather than silently building an index that
+      # sorts differently from production.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` alone returns success while the server is still in recovery, so the
+      # database name and user are named explicitly.
+      test: ["CMD-SHELL", "pg_isready -U helios -d helios"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7.4.1-bookworm
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Migrations run as their own one-shot service rather than in the backend's entrypoint.
+  # With one replica the difference is invisible; with three it is the difference between
+  # one migration and three racing each other on startup.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://helios:helios-dev-password@postgres:5432/helios
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      SOLAR_ENV: development
+      DATABASE_URL: postgresql+psycopg://helios:helios-dev-password@postgres:5432/helios
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: development-only-secret-not-for-any-real-deployment
+      # Prints verification and reset links to the log instead of delivering them, so a
+      # developer can complete a signup without configuring a mail provider.
+      EMAIL_PROVIDER: console
+      SOLAR_FRONTEND_BASE: http://localhost:3000
+      OAUTH_REDIRECT_BASE: http://localhost:8000
+      SOLAR_CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      SOLAR_JSON_LOGS: "false"
+      SOLAR_LOG_LEVEL: INFO
+      # Nothing is in front of this service here, so no forwarded header is trustworthy.
+      SOLAR_TRUSTED_PROXY_HOPS: "0"
+      # OAuth is off unless you supply credentials. The frontend asks which providers are
+      # configured and renders buttons only for those, so an unset pair means no button
+      # rather than a button that leads to a 503.
+      GOOGLE_OAUTH_CLIENT_ID: "${GOOGLE_OAUTH_CLIENT_ID:-}"
+      GOOGLE_OAUTH_CLIENT_SECRET: "${GOOGLE_OAUTH_CLIENT_SECRET:-}"
+      GITHUB_OAUTH_CLIENT_ID: "${GITHUB_OAUTH_CLIENT_ID:-}"
+      GITHUB_OAUTH_CLIENT_SECRET: "${GITHUB_OAUTH_CLIENT_SECRET:-}"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      # Same-origin in production via Nginx; here the Next rewrite forwards /api/* to the
+      # backend service, which keeps the cookie same-site in development too.
+      SOLAR_BACKEND_ORIGIN: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:

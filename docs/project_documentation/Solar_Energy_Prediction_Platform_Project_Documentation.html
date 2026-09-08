@@ -1,0 +1,2771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Solar Energy Prediction and Analysis Platform — Project Documentation</title>
+<style>
+@page {
+  size: A4;
+  margin: 22mm 20mm 22mm 20mm;
+  @top-left  { content: "Helios — Solar Energy Prediction and Analysis Platform"; font: 9pt "Inter", "Segoe UI", sans-serif; color: #555; }
+  @top-right { content: "Project Documentation"; font: 9pt "Inter", "Segoe UI", sans-serif; color: #555; }
+  @bottom-center { content: counter(page) " / " counter(pages); font: 9pt "Inter", "Segoe UI", sans-serif; color: #555; }
+}
+@page :first { @top-left { content: ""; } @top-right { content: ""; } @bottom-center { content: ""; } margin: 0; }
+@page cover  { margin: 0; @top-left { content: ""; } @top-right { content: ""; } @bottom-center { content: ""; } }
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: #14181f;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: #0b1220;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 8px 0;
+}
+h1 { font-size: 24pt; letter-spacing: -0.01em; }
+h2 { font-size: 16pt; margin-top: 20px; padding-bottom: 6px; border-bottom: 1px solid #d8dde5; }
+h3 { font-size: 12.5pt; margin-top: 16px; color: #1a2233; }
+h4 { font-size: 11pt; margin-top: 12px; color: #33405a; }
+
+p  { margin: 0 0 8px 0; }
+ul, ol { margin: 4px 0 10px 22px; padding: 0; }
+li { margin: 2px 0; }
+
+hr { border: none; border-top: 1px solid #d8dde5; margin: 14px 0; }
+
+code, .mono {
+  font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+  font-size: 9.4pt;
+  background: #f4f6fa;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+pre {
+  font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+  font-size: 9pt;
+  line-height: 1.5;
+  background: #f6f8fb;
+  border: 1px solid #dfe4ec;
+  border-left: 3px solid #f5a623;
+  padding: 10px 12px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 8px 0 12px 0;
+  page-break-inside: avoid;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.6pt;
+  margin: 8px 0 14px 0;
+  page-break-inside: avoid;
+}
+th, td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e2e6ee;
+  vertical-align: top;
+}
+th {
+  background: #f4f6fa;
+  font-weight: 600;
+  color: #1a2233;
+  border-bottom: 1.5px solid #b7c0d0;
+}
+tr:last-child td { border-bottom: none; }
+
+.figure {
+  margin: 10px 0 14px 0;
+  page-break-inside: avoid;
+  text-align: center;
+}
+.figure svg { max-width: 100%; height: auto; }
+.caption {
+  font-size: 9pt;
+  color: #55606f;
+  font-style: italic;
+  margin-top: 4px;
+  text-align: center;
+}
+
+blockquote {
+  margin: 8px 0;
+  padding: 6px 10px;
+  border-left: 3px solid #f5a623;
+  background: #fff7e8;
+  color: #4a3a15;
+  font-size: 9.8pt;
+}
+
+.callout {
+  border: 1px solid #cfd6e2;
+  background: #f8fafd;
+  padding: 8px 10px;
+  margin: 8px 0 10px 0;
+  border-radius: 3px;
+  font-size: 9.8pt;
+  page-break-inside: avoid;
+}
+.callout .label {
+  font-weight: 600;
+  color: #0b1220;
+  margin-right: 6px;
+}
+
+.section-num {
+  color: #f5a623;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+/* -------- Cover page -------- */
+.cover {
+  page: cover;
+  height: 297mm;
+  width: 210mm;
+  padding: 30mm 24mm;
+  background: linear-gradient(180deg, #0b1220 0%, #14213d 60%, #1c2b4f 100%);
+  color: #f4f6fa;
+  page-break-after: always;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.cover .eyebrow {
+  font-size: 10pt;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #f5a623;
+  font-weight: 500;
+}
+.cover h1 {
+  color: #ffffff;
+  font-size: 30pt;
+  line-height: 1.15;
+  margin-top: 14mm;
+  letter-spacing: -0.01em;
+  max-width: 150mm;
+}
+.cover .subtitle {
+  color: #cfd6e2;
+  font-size: 13pt;
+  margin-top: 10mm;
+  max-width: 150mm;
+  line-height: 1.4;
+}
+.cover .meta {
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 8mm;
+  color: #cfd6e2;
+  font-size: 9.5pt;
+  line-height: 1.7;
+}
+.cover .meta strong { color: #ffffff; font-weight: 500; }
+
+/* -------- TOC -------- */
+.toc { page-break-after: always; }
+.toc h2 { border: none; padding: 0; }
+.toc ol { list-style: none; margin: 12px 0 0 0; padding: 0; }
+.toc ol > li { padding: 3px 0; border-bottom: 1px dotted #d8dde5; display: flex; justify-content: space-between; font-size: 10pt; }
+.toc ol > li.sub { padding-left: 22px; color: #55606f; font-size: 9.5pt; }
+.toc .num { color: #f5a623; font-weight: 600; margin-right: 8px; }
+
+/* keep sections from splitting badly */
+section { break-inside: avoid-page; }
+section > h2 { break-after: avoid-page; }
+h3 + p, h3 + ul, h3 + ol, h3 + table, h4 + p { break-before: avoid-page; }
+
+/* Compact list utility */
+.tight li { margin: 1px 0; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kv { font-size: 9.6pt; }
+.kv strong { color: #0b1220; }
+
+.pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #eef1f6;
+  color: #33405a;
+  font-size: 8.6pt;
+  font-weight: 500;
+  margin-right: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- ==========================================================================
+                                  COVER
+=========================================================================== -->
+<div class="cover">
+  <div>
+    <div class="eyebrow">Project Documentation</div>
+    <h1>Solar Energy Prediction and Analysis Platform</h1>
+    <div class="subtitle">
+      A location-aware solar generation calculator for consumers, and a rigorous
+      hourly-irradiance analysis console for researchers &mdash; sharing one physical
+      engine, one data source, and one philosophy: every number traces back to an
+      assumption, and every assumption is on the table.
+    </div>
+  </div>
+  <div>
+    <svg viewBox="0 0 500 120" style="width: 100%; max-width: 500px;">
+      <defs>
+        <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f5a623" stop-opacity="0.9"/>
+          <stop offset="1" stop-color="#f5a623" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M 20 110 Q 60 20 100 90 T 180 55 T 260 30 T 340 60 T 420 20 T 480 90 L 480 110 Z"
+            fill="url(#sun)" stroke="#f5a623" stroke-width="1.5"/>
+      <line x1="20" y1="110" x2="480" y2="110" stroke="#cfd6e2" stroke-width="0.5"/>
+    </svg>
+    <div class="meta">
+      <strong>Codename:</strong> Helios &nbsp;&middot;&nbsp;
+      <strong>Version:</strong> 1.0 &nbsp;&middot;&nbsp;
+      <strong>Document type:</strong> Technical project documentation<br>
+      <strong>Repository root:</strong> college_project/ &nbsp;&middot;&nbsp;
+      <strong>Backend:</strong> Python 3.11 + FastAPI &nbsp;&middot;&nbsp;
+      <strong>Frontend:</strong> Next.js 15 + React 19<br>
+      <strong>Compiled:</strong> 2026-08-21
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+                                TABLE OF CONTENTS
+=========================================================================== -->
+<section class="toc">
+<h2>Table of Contents</h2>
+<ol>
+  <li><span><span class="num">1</span>Executive Summary</span><span>4</span></li>
+  <li><span><span class="num">2</span>Introduction and Background</span><span>6</span></li>
+  <li><span><span class="num">3</span>Problem Statement</span><span>7</span></li>
+  <li><span><span class="num">4</span>Objectives</span><span>8</span></li>
+  <li><span><span class="num">5</span>Target Users and Use Cases</span><span>9</span></li>
+  <li><span><span class="num">6</span>System Overview</span><span>11</span></li>
+  <li><span><span class="num">7</span>System Architecture</span><span>12</span></li>
+  <li><span><span class="num">8</span>Technology Stack</span><span>14</span></li>
+  <li><span><span class="num">9</span>Repository Structure</span><span>16</span></li>
+  <li><span><span class="num">10</span>User Experience and Workflow</span><span>18</span></li>
+  <li><span><span class="num">11</span>Adaptive Questionnaire</span><span>19</span></li>
+  <li><span><span class="num">12</span>User-Type Logic</span><span>20</span></li>
+  <li><span><span class="num">13</span>Location System</span><span>21</span></li>
+  <li><span><span class="num">14</span>Energy Consumption Model</span><span>23</span></li>
+  <li><span><span class="num">15</span>Solar Panel System</span><span>24</span></li>
+  <li><span><span class="num">16</span>Panel Quantity and System Capacity</span><span>26</span></li>
+  <li><span><span class="num">17</span>Solar Energy Prediction Methodology</span><span>28</span></li>
+  <li><span><span class="num">18</span>Mathematical Model &mdash; Formulas Used</span><span>30</span></li>
+  <li><span><span class="num">19</span>Machine Learning Model (Analysis Console)</span><span>33</span></li>
+  <li><span><span class="num">20</span>Weather and Solar Data</span><span>36</span></li>
+  <li><span><span class="num">21</span>Data Flow</span><span>37</span></li>
+  <li><span><span class="num">22</span>Results and Visualisation</span><span>38</span></li>
+  <li><span><span class="num">23</span>Uncertainty and Limitations</span><span>39</span></li>
+  <li><span><span class="num">24</span>Validation and Error Handling</span><span>41</span></li>
+  <li><span><span class="num">25</span>Security</span><span>43</span></li>
+  <li><span><span class="num">26</span>Performance and Responsiveness</span><span>44</span></li>
+  <li><span><span class="num">27</span>Accessibility and Usability</span><span>45</span></li>
+  <li><span><span class="num">28</span>Testing</span><span>46</span></li>
+  <li><span><span class="num">29</span>Deployment</span><span>48</span></li>
+  <li><span><span class="num">30</span>Installation and Running</span><span>50</span></li>
+  <li><span><span class="num">31</span>Future Improvements</span><span>51</span></li>
+  <li><span><span class="num">32</span>Conclusion</span><span>52</span></li>
+  <li><span><span class="num">33</span>Glossary</span><span>53</span></li>
+  <li><span><span class="num">34</span>References</span><span>55</span></li>
+  <li><span><span class="num">35</span>Appendix &mdash; API and Configuration</span><span>56</span></li>
+</ol>
+<p style="margin-top:16px; font-size: 9pt; color:#55606f;">
+Figures and tables are numbered per-section (e.g. Figure&nbsp;7.1) and listed inline
+alongside the text they accompany.
+</p>
+</section>
+
+<!-- ==========================================================================
+                                 1. EXECUTIVE SUMMARY
+=========================================================================== -->
+<section>
+<h2><span class="section-num">1</span>Executive Summary</h2>
+
+<p>
+The <strong>Solar Energy Prediction and Analysis Platform</strong> (internal codename
+<em>Helios</em>) is a full-stack web application that helps a non-specialist decide
+whether to install a solar photovoltaic (PV) system at a specific location, and gives
+a researcher the tools to interrogate hourly irradiance forecasting on the same data.
+It exposes two surfaces over one shared backend:
+</p>
+
+<ul>
+<li>
+<strong>A consumer calculator</strong> (route <code>/</code>): a two-minute guided
+interview that returns expected annual generation, monthly and daily shapes, a
+confidence-rated range, an energy balance against the user's consumption, financial
+savings, payback, emissions avoided, and a shareable report &mdash; without asking the
+user to know what a kilowatt-peak is.
+</li>
+<li>
+<strong>An analysis console</strong> (route <code>/advanced</code>): a fourteen-view
+research workbench that trains scikit-learn models on ERA5 reanalysis, validates them
+with time-aware splits and an embargo gap, calibrates prediction intervals with
+Conformalised Quantile Regression, and persists every run as a reproducible experiment.
+</li>
+</ul>
+
+<p>
+Both surfaces run against the same deterministic physical chain
+(Erbs&nbsp;<em>&rarr;</em> HDKR&nbsp;<em>&rarr;</em> Faiman&nbsp;<em>&rarr;</em> PVWatts&nbsp;v5)
+and the same weather source (Open-Meteo Historical Weather API / ERA5 reanalysis).
+Machine learning is deliberately restricted to the forward-looking research path where
+predicting a specific future day is the actual task; the consumer answer is a climatology
+question, computed by running years of observed weather through the physics.
+</p>
+
+<h3>Problem addressed</h3>
+<p>
+Solar generation depends on location, orientation, weather, panel technology and the
+user's own consumption pattern. Existing reference apps often return the same number
+for morning and afternoon inputs or state impossible pairs like "16.79 kWh at 0 %
+irradiance". The platform's remit is to return an answer that is location-aware,
+time-consistent, physically defensible, and honestly bounded.
+</p>
+
+<h3>Major capabilities</h3>
+<ul>
+<li>Address search, GPS auto-locate, map-pin, and reverse geocoding.</li>
+<li>Three ways to describe consumption (monthly bill, monthly kWh, or itemised
+equipment) and three ways to describe available space (single value, length &times;
+width, or polygon on a map).</li>
+<li>Automatic tilt/azimuth search against the location's own weather.</li>
+<li>Panel-count-first sizing, honouring existing systems and comparing scenarios.</li>
+<li>Regional tariffs and currencies for 30+ countries; farm-subsidy detection.</li>
+<li>Hourly self-consumption, battery dispatch and sizing, grid import/export ledger.</li>
+<li>Full economics: CAPEX, savings, payback, ROI, LCOE, degradation-corrected lifetime
+yield, CO<sub>2</sub> avoided with plain-language equivalences.</li>
+<li>Measured uncertainty bands built from inter-annual weather variability and named
+assumption components; monthly ranges reflect each month's own spread.</li>
+<li>Analysis console: 10 model families, rolling-origin cross-validation, five-check
+leakage audit, permutation importance, partial dependence, weather-regime error
+decomposition, anomaly detection, scenario analysis, and a Markdown report generator.</li>
+</ul>
+
+<h3>Outcome</h3>
+<p>
+A single-repository application (<code>backend/</code> + <code>frontend/</code>) that
+runs locally with no API keys, produces a saved estimate in about a second against
+cached weather (up to ~15&nbsp;s for a location never seen before), and completes a
+full model-trained analysis in 10&ndash;40&nbsp;s. Backed by 223+ backend and 51
+frontend automated tests.
+</p>
+</section>
+
+<!-- ==========================================================================
+                                 2. INTRODUCTION
+=========================================================================== -->
+<section>
+<h2><span class="section-num">2</span>Introduction and Background</h2>
+
+<p>
+Photovoltaic energy is the fastest-growing electricity source globally, but its output is
+weather-dependent and therefore uncertain. That uncertainty makes three practical decisions
+difficult: <em>sizing</em> a system to match consumption, <em>scheduling</em> maintenance
+around expected generation, and <em>balancing</em> a grid that increasingly relies on
+variable resources. A prediction of solar generation is only useful if it is genuinely
+predictive of the future, states how uncertain it is, and has been validated in a way that
+mirrors deployment conditions.
+</p>
+
+<p>
+Existing consumer solar tools mostly use a "sunlight&nbsp;&times;&nbsp;capacity" rule of
+thumb: they take a monthly kWh/m<sup>2</sup> figure, multiply by system size, and print a
+number. That approach hides four problems: (i) it treats a national average as if it applied
+to a specific rooftop, (ii) it does not respond to time or orientation, (iii) it presents
+modelled figures without any range around them, and (iv) it cannot explain where its numbers
+came from. This platform was built to replace that class of tool with something that is
+transparent, location-aware and honest about what it does not know.
+</p>
+
+<h3>Why prediction is useful</h3>
+<ul>
+<li><strong>Sizing.</strong> The right system size is the smallest one that meets the
+user's realistic offset target &mdash; not the biggest one that fits the roof. Getting
+this wrong wastes capital or under-produces for the life of the system.</li>
+<li><strong>Consumption matching.</strong> Solar generates when the sun is up. A household
+whose load is dominated by evening cooking recovers only a fraction of unstored generation
+through self-consumption; a farm whose pumps run during the day recovers most of it.</li>
+<li><strong>Financial planning.</strong> Payback depends on tariff, degradation, export
+policy and inter-annual weather variability; each of these is genuinely variable and
+each is stated openly here.</li>
+<li><strong>Grid operations.</strong> For an operator, hour-by-hour forecast accuracy
+with a calibrated range is the difference between a reserve that meets contingency and
+one that leaves a gap.</li>
+</ul>
+
+<h3>Challenges in estimating solar generation</h3>
+<ul>
+<li><strong>Atmospheric attenuation is stochastic.</strong> Cloud, aerosol, humidity and
+precipitation move irradiance around by up to an order of magnitude within a single day.</li>
+<li><strong>Solar geometry is deterministic.</strong> Sun position, angle of incidence
+and clear-sky reference are known analytically; mixing them into a learning problem lets
+the learner memorise the clock instead of the atmosphere.</li>
+<li><strong>Reanalysis is not measurement.</strong> Grid-cell averages differ
+systematically from point observations; this must be surfaced, not hidden.</li>
+<li><strong>Consumption archetypes are approximations.</strong> Real interval-meter data
+would beat any archetype, and the platform says so when it uses one.</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                              3. PROBLEM STATEMENT
+=========================================================================== -->
+<section>
+<h2><span class="section-num">3</span>Problem Statement</h2>
+
+<p>
+Anyone considering solar &mdash; a farmer, a homeowner, a shopkeeper, a facility manager
+&mdash; needs to answer four practical questions before spending money:
+</p>
+
+<ol>
+<li>How much energy can I generate here, per day and per year?</li>
+<li>How much of my consumption does that offset, and when does the mismatch fall?</li>
+<li>What will it cost, and how long will it take to pay back?</li>
+<li>How confident am I in each of these answers, given what I do and do not know?</li>
+</ol>
+
+<p>
+The available tools fail these questions in three characteristic ways. First, they return
+one national or regional number rather than one specific to the user's coordinates &mdash;
+so a farm in a monsoon belt and a farm in a desert receive the same result. Second, they
+report a single point estimate as if it were measured, giving no signal that the actual
+value in any particular year may be 15&nbsp;% above or below it. Third, they show none of
+the assumptions behind the number, so the user has no way to sanity-check it or to update
+it as their situation changes.
+</p>
+
+<h3>What the platform must therefore do</h3>
+<ul>
+<li><strong>Answer per-location.</strong> Every calculation must run against the actual
+weather record at the supplied coordinates, not a regional lookup.</li>
+<li><strong>Answer per-user.</strong> The interview must adapt to what the user is
+trying to do &mdash; a farm question is not a home question &mdash; and must let every
+technical question be declined without producing a garbage answer.</li>
+<li><strong>Attach a range.</strong> Every headline number must carry an honest
+uncertainty band built from named components, not a round <em>&plusmn;&nbsp;10&nbsp;%</em>.</li>
+<li><strong>Show its working.</strong> Every assumption used must be recorded and
+displayed, and changing any of them must move every dependent number.</li>
+<li><strong>Refuse to fabricate.</strong> Where the platform cannot know something
+(e.g. because no metered generation was supplied to validate against), it must say so
+in the interface rather than silently substituting a default.</li>
+</ul>
+
+<div class="callout">
+<span class="label">Reference-app failure that shaped this brief:</span>
+The predecessor application returned <em>16.79&nbsp;kWh alongside 0&nbsp;% stated
+irradiance</em> and gave the <em>same figure for 06:51 and 13:51</em>. Both are recorded
+in <code>docs/REFERENCE_AUDIT.md</code>. The platform's design decisions &mdash;
+time-aware validation, physical constraints applied after inference, explicit assumption
+ledger &mdash; exist so that neither failure can recur in Helios.
+</div>
+</section>
+
+<!-- ==========================================================================
+                                 4. OBJECTIVES
+=========================================================================== -->
+<section>
+<h2><span class="section-num">4</span>Objectives</h2>
+
+<h3>Primary objectives</h3>
+<ol>
+<li><strong>Deliver location-specific solar generation estimates</strong> using the
+observed hourly weather record at the user's supplied coordinates, not a regional
+average.</li>
+<li><strong>Adapt the questionnaire</strong> to six user categories (home, farm, shop,
+commercial/industrial, institution, exploring) with different questions, defaults and
+result emphasis.</li>
+<li><strong>Attach measured uncertainty</strong> to every headline number, decomposed
+into weather variability, resource error, model error and per-assumption components.</li>
+<li><strong>Compute an energy balance and finances</strong>: hourly self-consumption
+and export, battery dispatch/sizing where requested, tariff-aware savings, payback,
+ROI, LCOE and lifetime CO<sub>2</sub> avoided.</li>
+<li><strong>Support three goals</strong>: sizing a planned system, describing an
+existing one, and comparing scenarios side-by-side.</li>
+<li><strong>Produce a shareable, saved estimate</strong> with a stable URL, a plain-text
+report and an editable assumption ledger.</li>
+<li><strong>Provide a research console</strong> that trains and evaluates ten scikit-learn
+model families with time-aware validation, prediction intervals and reproducibility
+manifests.</li>
+</ol>
+
+<h3>Secondary objectives</h3>
+<ol>
+<li><strong>Run keyless.</strong> Every upstream service used (Open-Meteo Archive and
+Geocoding, OpenStreetMap Nominatim) is public; no API keys and no accounts are
+required.</li>
+<li><strong>Localise gracefully.</strong> Interview strings are held as data (not in
+components) so a future translator can add Telugu or Tamil without editing React.</li>
+<li><strong>Fit into a rural context.</strong> Mobile-first layout, touch-friendly
+controls, tolerance of dropped GPS permission, an offline-tolerant map with a
+Leaflet swap.</li>
+<li><strong>Never present modelled figures as measurements.</strong> No metered PV
+output was available, so the interface labels PV figures as physically modelled and
+uses no synthetic "validation" against fabricated data.</li>
+<li><strong>Keep the surfaces separate.</strong> The consumer flow and the console flow
+do not share a palette, a route, a wording register, or a reader.</li>
+<li><strong>Preserve provenance.</strong> Every weather fetch is cached to disk and every
+model run is written to an experiment store with a dataset fingerprint (SHA-256 of the
+feature matrix + target + names + period).</li>
+</ol>
+</section>
+
+<!-- ==========================================================================
+                             5. TARGET USERS AND USE CASES
+=========================================================================== -->
+<section>
+<h2><span class="section-num">5</span>Target Users and Use Cases</h2>
+
+<p>
+Six user categories are supported explicitly by the interview data in
+<code>backend/app/estimate/personas.py</code>. Each carries its own icon, its own
+default question set, and its own emphasis in the results.
+</p>
+
+<table>
+<thead>
+<tr><th>User type</th><th>Typical inputs collected</th><th>Result emphasis</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Home</strong></td>
+<td>Monthly bill or kWh, roof space or dimensions, occupants (optional), appliance
+list (optional), tariff (regional default, editable).</td>
+<td>Bill offset, monthly savings, payback, indicative panel count, battery option
+if selected.</td>
+</tr>
+<tr>
+<td><strong>Farm / Agriculture</strong></td>
+<td>What is being powered (pumps, cold storage, sheds, dairy, poultry), pump horsepower
+and head, required daily water volume, crop water requirement (mm/day), land or
+shed area.</td>
+<td>Daily pumping hours (best month, worst month, annual mean), water pumped per day
+(m<sup>3</sup>), irrigable area (ha), subsidy-aware savings note.</td>
+</tr>
+<tr>
+<td><strong>Shop / Small Business</strong></td>
+<td>Business type (shop / clinic / salon / restaurant / office), operating hours,
+monthly bill or kWh, available roof area, grid connection type.</td>
+<td>Daytime self-consumption, offset percentage, payback under regional commercial
+tariff.</td>
+</tr>
+<tr>
+<td><strong>Commercial / Industrial</strong></td>
+<td>Facility type (factory / warehouse / cold storage / logistics / mill), peak demand
+and connected load (optional), operating hours, offset target percentage, grid
+connection.</td>
+<td>Solar offset percentage, peak-demand caveat (solar rarely reduces peak-demand
+charges), self-consumption ratio, lifetime CO<sub>2</sub>.</td>
+</tr>
+<tr>
+<td><strong>School / Institution</strong></td>
+<td>Facility type, weekday occupancy pattern (implicit through operating hours), roof
+area, monthly bill.</td>
+<td>Term-time vs holiday balance, offset percentage, community-oriented CO<sub>2</sub>
+equivalences (cars off the road, trees planted).</td>
+</tr>
+<tr>
+<td><strong>Just Exploring</strong></td>
+<td>Minimum: location only. Any consumption input is optional.</td>
+<td>Site potential (specific yield, capacity factor, best/worst month), no financial
+figures unless a tariff and demand are supplied.</td>
+</tr>
+</tbody>
+</table>
+
+<p class="caption">Table&nbsp;5.1 &nbsp;&mdash;&nbsp; Six user types supported by the
+interview. Every user type flows through the same computational engine; the difference is
+which questions are asked, which defaults are applied, and which sections of the result
+are emphasised.</p>
+
+<h3>Representative workflows</h3>
+
+<h4>Farmer with a 5 HP pump and 3 acres</h4>
+<p>
+Answer <em>Farm</em>, drop a pin on the well, tell the interview it is a 5 HP pump on
+a 20&nbsp;m head. Everything else can be skipped. The estimate returns the daily
+generation, the number of pump-hours that generation supports, and how many
+m<sup>3</sup> of water that moves in the driest month versus the monsoon. A
+subsidy-aware caveat appears if the location's default agricultural tariff is
+subsidised.
+</p>
+
+<h4>Homeowner with a 3&nbsp;000&nbsp;INR monthly bill and 40&nbsp;m<sup>2</sup> of usable roof</h4>
+<p>
+Answer <em>Home</em>, enter the bill, enter the roof area. The engine picks the best
+tilt/azimuth for the location, recommends a panel count that hits the bill (subject to
+space), returns monthly savings and payback, and asks whether to add battery storage.
+</p>
+
+<h4>Facility manager comparing 100&nbsp;kWp, 150&nbsp;kWp, and 200&nbsp;kWp options</h4>
+<p>
+Fill in the details once (facility type, roof, tariff), then use <code>POST
+/api/estimate/compare</code> to score all three capacities against the same weather,
+producing a table of annual&nbsp;kWh, offset&nbsp;%, CAPEX, payback and ROI.
+</p>
+
+<h4>Owner of an existing 5&nbsp;kWp array</h4>
+<p>
+Set goal to <em>Existing</em>, enter the panel count and their rated wattage. The sizer
+is bypassed &mdash; capacity is a measurement of what is on the roof, not a
+recommendation &mdash; and the engine produces the true expected production of the
+installed system, giving the owner a benchmark against their actual bills.
+</p>
+</section>
+
+<!-- ==========================================================================
+                                6. SYSTEM OVERVIEW
+=========================================================================== -->
+<section>
+<h2><span class="section-num">6</span>System Overview</h2>
+
+<p>
+Helios is a two-tier web application. A Python 3.11 backend built on FastAPI exposes
+a typed JSON API; a Next.js 15 frontend consumes it. All state is persisted server-side
+as JSON on local disk &mdash; there is no database and no user account system. Two
+external services are called: the Open-Meteo Historical Weather API for hourly
+reanalysis, and OpenStreetMap Nominatim for reverse-geocoding a dropped map pin.
+Both are keyless.
+</p>
+
+<div class="figure">
+<svg viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .node { fill: #f6f8fb; stroke: #33405a; stroke-width: 1; }
+    .accent { fill: #fff7e8; stroke: #f5a623; stroke-width: 1.2; }
+    .arrow { stroke: #33405a; stroke-width: 1.2; fill: none; marker-end: url(#a); }
+    .label { font: 10px "Inter", sans-serif; fill: #14181f; }
+    .sub { font: 8.5px "Inter", sans-serif; fill: #55606f; }
+    .title { font: 11px "Inter", sans-serif; font-weight:600; fill: #0b1220; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#33405a"/>
+    </marker>
+  </defs>
+
+  <!-- User -->
+  <rect x="20" y="145" width="90" height="50" rx="4" class="node"/>
+  <text x="65" y="167" text-anchor="middle" class="title">User</text>
+  <text x="65" y="184" text-anchor="middle" class="sub">web browser</text>
+
+  <!-- Frontend -->
+  <rect x="140" y="120" width="150" height="100" rx="4" class="accent"/>
+  <text x="215" y="142" text-anchor="middle" class="title">Frontend</text>
+  <text x="215" y="160" text-anchor="middle" class="sub">Next.js 15 · React 19</text>
+  <text x="215" y="176" text-anchor="middle" class="sub">Consumer surface / (site)</text>
+  <text x="215" y="190" text-anchor="middle" class="sub">Console /advanced</text>
+  <text x="215" y="204" text-anchor="middle" class="sub">Custom SVG charts</text>
+
+  <!-- Backend API -->
+  <rect x="320" y="120" width="150" height="100" rx="4" class="accent"/>
+  <text x="395" y="142" text-anchor="middle" class="title">Backend API</text>
+  <text x="395" y="160" text-anchor="middle" class="sub">FastAPI · Python 3.11</text>
+  <text x="395" y="176" text-anchor="middle" class="sub">/api/estimate · /api/analysis</text>
+  <text x="395" y="190" text-anchor="middle" class="sub">Rate-limited · CORS-scoped</text>
+  <text x="395" y="204" text-anchor="middle" class="sub">Structured error envelope</text>
+
+  <!-- Estimate engine -->
+  <rect x="500" y="30" width="110" height="80" rx="4" class="node"/>
+  <text x="555" y="52" text-anchor="middle" class="title">Estimate engine</text>
+  <text x="555" y="70" text-anchor="middle" class="sub">app/estimate/*</text>
+  <text x="555" y="84" text-anchor="middle" class="sub">Physical chain over</text>
+  <text x="555" y="98" text-anchor="middle" class="sub">years of weather</text>
+
+  <!-- ML console -->
+  <rect x="500" y="130" width="110" height="80" rx="4" class="node"/>
+  <text x="555" y="152" text-anchor="middle" class="title">Model trainer</text>
+  <text x="555" y="170" text-anchor="middle" class="sub">app/models · scikit-learn</text>
+  <text x="555" y="184" text-anchor="middle" class="sub">Time-aware CV</text>
+  <text x="555" y="198" text-anchor="middle" class="sub">Conformal intervals</text>
+
+  <!-- Storage -->
+  <rect x="500" y="230" width="110" height="80" rx="4" class="node"/>
+  <text x="555" y="252" text-anchor="middle" class="title">Local storage</text>
+  <text x="555" y="270" text-anchor="middle" class="sub">Weather cache (JSON)</text>
+  <text x="555" y="284" text-anchor="middle" class="sub">Saved estimates</text>
+  <text x="555" y="298" text-anchor="middle" class="sub">Experiment ledger</text>
+
+  <!-- External -->
+  <rect x="140" y="250" width="150" height="70" rx="4" class="node"/>
+  <text x="215" y="272" text-anchor="middle" class="title">External services</text>
+  <text x="215" y="290" text-anchor="middle" class="sub">Open-Meteo Archive (ERA5)</text>
+  <text x="215" y="304" text-anchor="middle" class="sub">Open-Meteo Geocoding · OSM Nominatim</text>
+
+  <!-- Arrows -->
+  <line class="arrow" x1="110" y1="170" x2="140" y2="170"/>
+  <line class="arrow" x1="290" y1="170" x2="320" y2="170"/>
+  <line class="arrow" x1="470" y1="140" x2="500" y2="80"/>
+  <line class="arrow" x1="470" y1="170" x2="500" y2="170"/>
+  <line class="arrow" x1="470" y1="200" x2="500" y2="260"/>
+  <line class="arrow" x1="215" y1="220" x2="215" y2="250"/>
+  <line class="arrow" x1="320" y1="200" x2="290" y2="252"/>
+</svg>
+<div class="caption">Figure&nbsp;6.1 &nbsp;&mdash;&nbsp; High-level system view. The
+frontend never contacts external services directly &mdash; all upstream calls flow through
+the backend, which caches every response.</div>
+</div>
+
+<h3>End-to-end flow (consumer estimate)</h3>
+<pre>User → UI wizard → typed request → FastAPI /api/estimate
+     → engine.run(input):
+         resolve_location → tariff/currency → resolve_demand
+         → fetch_history (weather cache)  → optimal_orientation
+         → reference climatology (per kWp) → recommend_capacity
+         → panel-quantised system         → final climatology
+         → energy balance                 → economics
+         → uncertainty                    → farm capability (if farm)
+     → assembled payload → optionally save → response
+     → React ResultView / CompareView / SystemSpecification</pre>
+</section>
+
+<!-- ==========================================================================
+                              7. SYSTEM ARCHITECTURE
+=========================================================================== -->
+<section>
+<h2><span class="section-num">7</span>System Architecture</h2>
+
+<h3>Presentation Layer</h3>
+<p>
+Next.js 15 App Router with React 19 and TypeScript. Two route groups keep the surfaces
+separate: <code>app/(site)/</code> hosts the consumer flow (landing, start, estimate,
+result, compare, resources, projects, how-it-works, about) with a light palette, while
+<code>app/advanced/</code> hosts the analysis console with a dark instrument palette
+and no shared chrome. Styling is Tailwind CSS 3.4 with a hand-tuned token scheme; there
+is no charting library &mdash; every plot in both surfaces is a hand-rolled SVG in
+<code>components/charts/</code> and <code>components/result/charts.tsx</code>.
+</p>
+
+<h3>Application / API Layer</h3>
+<p>
+FastAPI application <code>backend/app/main.py</code> assembles four routers:
+</p>
+<ul class="tight">
+<li><code>app.api.routes.meta</code> &nbsp;&mdash; health, catalogue, interview metadata,
+data-source manifest, place search.</li>
+<li><code>app.api.routes.estimate</code> &nbsp;&mdash; consumer surface:
+create/read/update/delete/rename an estimate, run a comparison, produce a professional
+report.</li>
+<li><code>app.api.routes.analysis</code> &nbsp;&mdash; console surface: create an
+analysis, then query its quality, predictions, performance, intervals, explanation,
+anomalies, forecast, scenarios and report subresources.</li>
+<li><code>app.api.routes.experiments</code> &nbsp;&mdash; list, compare and delete
+persisted experiments.</li>
+</ul>
+<p>
+Cross-cutting concerns live in <code>main.py</code>: a fixed-window in-process rate
+limiter, a middleware that stamps every response with a request ID and elapsed time,
+security headers (<code>X-Content-Type-Options</code>, <code>Referrer-Policy</code>,
+<code>X-Frame-Options</code>), and error translators that turn Pydantic validation
+failures, upstream data-source errors and internal exceptions into a structured
+envelope with <code>error</code>, <code>message</code>, <code>detail</code>,
+<code>remedy</code> and (for validation) <code>field_errors</code>.
+</p>
+
+<h3>Data Layer</h3>
+<p>
+No relational database. Two on-disk stores keep server state:
+</p>
+<ul class="tight">
+<li><strong>Weather &amp; geocoding cache</strong> &mdash; JSON files keyed by a
+SHA-256 of the request URL + parameters, with a configurable TTL. Every upstream call
+goes through this cache, so an orientation search that evaluates twenty candidate tilts
+still fetches the weather only once.</li>
+<li><strong>Estimate store</strong> &mdash; JSON records under
+<code>backend/var/estimates/</code>, addressable by opaque estimate ID. Records include
+the full payload, the original request snapshot (for update), the label and timestamps.
+A retention sweep at startup prunes records past the configurable window.</li>
+<li><strong>Experiment store</strong> &mdash; JSON records for every training run,
+carrying the dataset fingerprint, metrics, folds, baselines and manifest; used by the
+console's <em>Experiments</em> view.</li>
+</ul>
+
+<h3>Prediction Layer</h3>
+<p>Two paths share a single physical chain and a single feature pipeline:</p>
+<ul class="tight">
+<li><strong>Fast path (consumer)</strong> &mdash; <code>app/estimate/climatology.py</code>
+runs the physical chain over 3 years of ERA5 hourly weather at the coordinates. No
+model is trained; inter-annual variability is <em>measured</em>, not assumed.</li>
+<li><strong>Forward-looking path (console)</strong> &mdash;
+<code>app/models/trainer.py</code> trains a scikit-learn estimator on a feature set
+built from the same weather (see <a href="#sec19">&sect;&nbsp;19</a>), splits
+chronologically with a 24-hour embargo, cross-validates with rolling origins, and
+calibrates a prediction interval using Conformalised Quantile Regression.</li>
+</ul>
+
+<h3>External Services</h3>
+<table>
+<thead><tr><th>Service</th><th>Endpoint</th><th>Purpose</th><th>Key required</th></tr></thead>
+<tbody>
+<tr><td>Open-Meteo Historical Weather</td><td><code>archive-api.open-meteo.com/v1/archive</code></td><td>Hourly ERA5 / ERA5-Land reanalysis: GHI, DNI, DHI, T, RH, wind, cloud, precipitation, pressure.</td><td>No</td></tr>
+<tr><td>Open-Meteo Geocoding</td><td><code>geocoding-api.open-meteo.com/v1/search</code></td><td>Place-name search and elevation (GeoNames source, CC-BY 4.0).</td><td>No</td></tr>
+<tr><td>OpenStreetMap Nominatim</td><td><code>nominatim.openstreetmap.org/reverse</code></td><td>Reverse-geocoding a coordinate to a place name (map pin or GPS).</td><td>No</td></tr>
+<tr><td>Open-Meteo Forecast</td><td><code>api.open-meteo.com/v1/forecast</code></td><td>Short-horizon forecast used by the console's <em>Forecast</em> view.</td><td>No</td></tr>
+</tbody>
+</table>
+<p class="caption">Table&nbsp;7.1 &nbsp;&mdash;&nbsp; External services. Every one is
+keyless; the rate limit is entirely the provider's.</p>
+
+<div class="callout">
+<span class="label">Design principle:</span> <em>The frontend has no secrets and does
+no data acquisition.</em> Every upstream call is proxied through the backend so that a
+change of provider touches one file (<code>backend/app/data/sources.py</code>) and so
+that cache and quality scoring apply uniformly.
+</div>
+</section>
+
+<!-- ==========================================================================
+                                8. TECHNOLOGY STACK
+=========================================================================== -->
+<section>
+<h2><span class="section-num">8</span>Technology Stack</h2>
+
+<table>
+<thead>
+<tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>Frontend framework</td><td>Next.js 15.5 (App Router) + React 19 + TypeScript 5.7</td><td>Consumer surface and analysis console; server components for the shell, client components for interactivity.</td></tr>
+<tr><td>Styling</td><td>Tailwind CSS 3.4 with custom tokens; PostCSS + Autoprefixer</td><td>Design-token-driven styling; two palettes (light for consumer, dark for console).</td></tr>
+<tr><td>Map (default)</td><td>Hand-rolled Web-Mercator tile map (~250&nbsp;LOC) &mdash; <code>components/estimate/map/TileMap.tsx</code></td><td>Zero-bundle map with pin-drop and polygon-draw; renders raster tiles.</td></tr>
+<tr><td>Map (swap)</td><td>Leaflet 1.9 via a dynamically-imported adapter</td><td>One-line environment switch (<code>NEXT_PUBLIC_MAP_ENGINE=leaflet</code>) for devices the built-in map mishandles.</td></tr>
+<tr><td>Client state</td><td>React state + <code>lib/draft.ts</code> localStorage draft persistence</td><td>No global state library; the wizard's answers survive a page refresh.</td></tr>
+<tr><td>Testing (frontend)</td><td>Vitest 2.1 + Testing Library + jsdom</td><td>51 tests covering projection maths, draft mapping and component promises.</td></tr>
+<tr><td>Backend framework</td><td>FastAPI 0.115 + Uvicorn 0.32 (ASGI)</td><td>Typed JSON API with automatic OpenAPI docs at <code>/api/docs</code>.</td></tr>
+<tr><td>Backend runtime</td><td>Python 3.11+</td><td>Type-hinted dataclasses across the domain layer.</td></tr>
+<tr><td>Scientific stack</td><td>NumPy 1.26+, pandas 2.2+, SciPy 1.13+, scikit-learn 1.5+</td><td>Vectorised physical chain, feature engineering, model training and evaluation.</td></tr>
+<tr><td>Data validation</td><td>Pydantic 2.9</td><td>Request-schema validation, error messages mapped to user-facing prompts.</td></tr>
+<tr><td>Testing (backend)</td><td>pytest 8 + httpx 0.27</td><td>223+ tests including physical chain against astronomical values, split leakage, quality detection, API contracts.</td></tr>
+<tr><td>Weather source</td><td>Open-Meteo Historical Weather API (ERA5 / ERA5-Land)</td><td>Hourly meteorological variables at the user's coordinates.</td></tr>
+<tr><td>Geocoding</td><td>Open-Meteo Geocoding + OpenStreetMap Nominatim</td><td>Forward search (place &rarr; coords), reverse (coords &rarr; place).</td></tr>
+<tr><td>Storage</td><td>Local filesystem (JSON)</td><td>Cache, saved estimates, experiment ledger. No database, no accounts.</td></tr>
+<tr><td>Deployment</td><td>Uvicorn workers (backend) + Next.js production server (frontend)</td><td>Standard ASGI + Node processes; behind a reverse proxy in production.</td></tr>
+</tbody>
+</table>
+<p class="caption">Table&nbsp;8.1 &nbsp;&mdash;&nbsp; Technology stack, as actually used
+in the repository. Nothing here is aspirational: each entry appears in
+<code>package.json</code> or <code>requirements.txt</code>.</p>
+
+<h3>Deliberate omissions</h3>
+<ul class="tight">
+<li><strong>No charting library.</strong> Every visualisation is a hand-written SVG so
+the design and print output are under full control and the bundle stays small.</li>
+<li><strong>No state-management library.</strong> React state plus localStorage covers
+every wizard step.</li>
+<li><strong>No deep-learning runtime.</strong> The model set intentionally stops at
+scikit-learn ensembles; sequence models (LSTM / BiGRU) are declared as future work in
+<code>app/models/registry.py::future_work()</code>.</li>
+<li><strong>No third-party auth.</strong> There are no user accounts; estimates are
+addressable by an opaque, unlisted URL.</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                             9. REPOSITORY STRUCTURE
+=========================================================================== -->
+<section>
+<h2><span class="section-num">9</span>Repository Structure</h2>
+
+<pre>college_project/
+├── backend/
+│   ├── app/
+│   │   ├── main.py              FastAPI app, middleware, error translation
+│   │   ├── config.py            Environment-driven settings (safe defaults)
+│   │   ├── api/
+│   │   │   ├── service.py       Analysis creation + in-memory cache
+│   │   │   └── routes/
+│   │   │       ├── meta.py            /api/meta/* health, catalogue, interview
+│   │   │       ├── estimate.py        /api/estimate/* consumer surface (10 endpoints)
+│   │   │       ├── analysis.py        /api/analysis/* research surface (14 endpoints)
+│   │   │       └── experiments.py     /api/experiments/* persisted runs
+│   │   ├── data/
+│   │   │   └── sources.py       HTTP with disk cache; Open-Meteo &amp; Nominatim clients
+│   │   ├── features/
+│   │   │   ├── solar_geometry.py     NOAA position, Haurwitz, Erbs, HDKR, Faiman, PVWatts v5
+│   │   │   ├── parameters.py         Solar-position features, clear-sky index, cyclical time
+│   │   │   └── pipeline.py           Feature-set builder with leakage guards
+│   │   ├── quality/engine.py    Transparent data-quality scoring (eight corruption types)
+│   │   ├── models/
+│   │   │   ├── registry.py      10 estimator specs with paper-cited hyperparameters
+│   │   │   ├── trainer.py       Split, fit, evaluate, cross-validate, calibrate
+│   │   │   ├── uncertainty.py   Conformalised quantile regression
+│   │   │   └── forecast.py      Short-horizon forecasting for the console
+│   │   ├── evaluation/
+│   │   │   ├── metrics.py       MAE, RMSE, MBE, R², rRMSE, pinball, PICP, PINAW, CRPS
+│   │   │   ├── splitters.py     Chronological hold-out + rolling origins with embargo
+│   │   │   ├── baselines.py     Persistence, smart persistence, climatology, seasonal-naive
+│   │   │   └── leakage.py       Five-check audit (target, future, preprocessing, boundary, trivial)
+│   │   ├── explain/attribution.py    Permutation importance, partial dependence
+│   │   ├── anomaly/detector.py       Physical, residual, ramp, drift detectors
+│   │   ├── scenario/engine.py        Counterfactual scenarios with pathway decomposition
+│   │   ├── experiments/store.py      On-disk experiment ledger
+│   │   ├── reports/generator.py      Console-side Markdown report
+│   │   ├── schemas/                  Pydantic request/response models
+│   │   └── estimate/                 (see next tree)
+│   ├── scripts/                      calibrate_interval.py, evaluation utilities
+│   └── tests/                        223+ pytest tests
+│
+├── frontend/
+│   ├── app/
+│   │   ├── layout.tsx                Root shell + font + globals
+│   │   ├── globals.css               Tailwind base, tokens, print rules
+│   │   ├── (site)/                   Consumer surface (route group)
+│   │   │   ├── page.tsx              Landing
+│   │   │   ├── start/                User-type & goal picker
+│   │   │   ├── estimate/             Interview wizard
+│   │   │   ├── result/               Result dashboard
+│   │   │   ├── compare/              Scenario comparison
+│   │   │   ├── projects/             Saved estimates gallery
+│   │   │   ├── how-it-works/         Methodology page
+│   │   │   ├── resources/            Solar resource explainer
+│   │   │   └── about/                About page
+│   │   └── advanced/                 Analysis console (14 views)
+│   ├── components/
+│   │   ├── Console.tsx               Console shell (dark palette)
+│   │   ├── Setup.tsx                 Console setup form
+│   │   ├── site/                     Nav, Footer, Icon, ProjectsDashboard, ResourceCurve
+│   │   ├── estimate/                 EstimateWizard, LocationStep, AreaField, EquipmentBuilder,
+│   │   │                             LoadingStages, StartFlow, fields, map/ (Tile + Leaflet)
+│   │   ├── result/                   ResultView, CompareView, PanelConfigurator,
+│   │   │                             SystemSpecification, AssumptionEditor, charts
+│   │   ├── charts/                   Hand-rolled SVG chart primitives
+│   │   └── views/                    14 console views (Overview, Performance, Uncertainty, ...)
+│   ├── lib/                          api client, draft, format, i18n, estimate mapping, useAsync
+│   └── tests/                        51 Vitest tests
+│
+└── docs/
+    ├── DELIVERY.md                   Delivery report (what changed, methodology)
+    ├── RESEARCH_SYNTHESIS.md         Papers surveyed + design decisions
+    ├── PRODUCT_TRANSFORMATION_AUDIT.md  Consumer-layer audit &amp; rationale
+    ├── REFERENCE_AUDIT.md            Failures of the predecessor app
+    └── project_documentation/        This document (Markdown + HTML + PDF)
+</pre>
+
+<h3>Estimate subpackage detail</h3>
+<pre>backend/app/estimate/
+    engine.py        1058 LOC · Pipeline orchestrator (14 numbered stages)
+    personas.py      1256 LOC · The interview as data (six user types, all questions)
+    sizing.py         667 LOC · Orientation search, capacity recommendation, panel quantisation
+    assumptions.py    641 LOC · Panel technologies, loss stack, all default values, provenance
+    demand.py         496 LOC · Bill / units / equipment / floor-area routes; hourly archetypes
+    climatology.py    344 LOC · Fast path: physical chain over N years of weather
+    balance.py        313 LOC · Hourly self-consumption, import/export, battery dispatch
+    uncertainty.py    319 LOC · Confidence band from named components
+    space.py          306 LOC · Panel packing, footprint, usable-fraction by mount type
+    tariffs.py        248 LOC · Regional currencies and default rates (30+ countries)
+    economics.py      248 LOC · CAPEX, savings, payback, ROI, LCOE, CO₂
+    farm.py           237 LOC · Pumping hours, water pumped, irrigable area
+    store.py          230 LOC · JSON-file persistence for saved estimates
+    report.py         307 LOC · Plain-text professional report for hand-off
+</pre>
+</section>
+
+<!-- ==========================================================================
+                       10. USER EXPERIENCE AND WORKFLOW
+=========================================================================== -->
+<section>
+<h2><span class="section-num">10</span>User Experience and Workflow</h2>
+
+<p>
+The consumer flow is a linear wizard with a single decision point at the top: what
+kind of user, and what goal. Every subsequent step adapts to those answers.
+</p>
+
+<div class="figure">
+<svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .step { fill: #ffffff; stroke: #33405a; stroke-width: 1; }
+    .decision { fill: #fff7e8; stroke: #f5a623; stroke-width: 1.2; }
+    .result { fill: #eaf3ea; stroke: #4a7a4a; stroke-width: 1.2; }
+    .lbl { font: 10px "Inter", sans-serif; fill: #14181f; }
+    .arw { stroke: #33405a; stroke-width: 1; fill: none; marker-end: url(#a2); }
+  </style>
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#33405a"/>
+    </marker>
+  </defs>
+
+  <rect x="20"  y="20"  width="140" height="40" class="step"/>
+  <text x="90"  y="46"  text-anchor="middle" class="lbl">1. Landing page</text>
+
+  <rect x="200" y="20"  width="160" height="40" class="decision"/>
+  <text x="280" y="40"  text-anchor="middle" class="lbl">2. Start: user type</text>
+  <text x="280" y="54"  text-anchor="middle" class="lbl">(home · farm · shop · …)</text>
+
+  <rect x="400" y="20"  width="140" height="40" class="decision"/>
+  <text x="470" y="40"  text-anchor="middle" class="lbl">3. Goal</text>
+  <text x="470" y="54"  text-anchor="middle" class="lbl">install · existing · compare</text>
+
+  <rect x="20"  y="90"  width="140" height="40" class="step"/>
+  <text x="90"  y="116" text-anchor="middle" class="lbl">4. Location (search/GPS/pin)</text>
+
+  <rect x="200" y="90"  width="160" height="40" class="step"/>
+  <text x="280" y="110" text-anchor="middle" class="lbl">5. Consumption</text>
+  <text x="280" y="124" text-anchor="middle" class="lbl">bill · kWh · equipment · skip</text>
+
+  <rect x="400" y="90"  width="140" height="40" class="step"/>
+  <text x="470" y="110" text-anchor="middle" class="lbl">6. Space available</text>
+  <text x="470" y="124" text-anchor="middle" class="lbl">value · L×W · polygon</text>
+
+  <rect x="20"  y="160" width="160" height="40" class="step"/>
+  <text x="100" y="180" text-anchor="middle" class="lbl">7. Panel technology</text>
+  <text x="100" y="194" text-anchor="middle" class="lbl">Mono / Poly / TOPCon / …</text>
+
+  <rect x="220" y="160" width="140" height="40" class="step"/>
+  <text x="290" y="180" text-anchor="middle" class="lbl">8. Panel count / watts</text>
+  <text x="290" y="194" text-anchor="middle" class="lbl">(known · recommend)</text>
+
+  <rect x="400" y="160" width="180" height="40" class="step"/>
+  <text x="490" y="180" text-anchor="middle" class="lbl">9. Advanced (detailed mode only)</text>
+  <text x="490" y="194" text-anchor="middle" class="lbl">tilt · azimuth · shading · inverter</text>
+
+  <rect x="20"  y="230" width="140" height="40" class="step"/>
+  <text x="90"  y="250" text-anchor="middle" class="lbl">10. Money &amp; tariff</text>
+  <text x="90"  y="264" text-anchor="middle" class="lbl">(regional default, editable)</text>
+
+  <rect x="200" y="230" width="160" height="40" class="step"/>
+  <text x="280" y="250" text-anchor="middle" class="lbl">11. Battery (optional)</text>
+
+  <rect x="400" y="230" width="140" height="40" class="step"/>
+  <text x="470" y="250" text-anchor="middle" class="lbl">12. Loading stages</text>
+
+  <rect x="200" y="300" width="180" height="50" class="result"/>
+  <text x="290" y="322" text-anchor="middle" class="lbl">13. Result dashboard</text>
+  <text x="290" y="336" text-anchor="middle" class="lbl">generation · balance · finances · range</text>
+
+  <rect x="410" y="300" width="180" height="50" class="result"/>
+  <text x="500" y="320" text-anchor="middle" class="lbl">14. Report / Compare / Save</text>
+  <text x="500" y="334" text-anchor="middle" class="lbl">shareable link · plain-text report</text>
+
+  <!-- arrows -->
+  <line class="arw" x1="160" y1="40" x2="200" y2="40"/>
+  <line class="arw" x1="360" y1="40" x2="400" y2="40"/>
+  <line class="arw" x1="470" y1="60" x2="90"  y2="90"/>
+  <line class="arw" x1="160" y1="110" x2="200" y2="110"/>
+  <line class="arw" x1="360" y1="110" x2="400" y2="110"/>
+  <line class="arw" x1="470" y1="130" x2="100" y2="160"/>
+  <line class="arw" x1="180" y1="180" x2="220" y2="180"/>
+  <line class="arw" x1="360" y1="180" x2="400" y2="180"/>
+  <line class="arw" x1="490" y1="200" x2="90"  y2="230"/>
+  <line class="arw" x1="160" y1="250" x2="200" y2="250"/>
+  <line class="arw" x1="360" y1="250" x2="400" y2="250"/>
+  <line class="arw" x1="470" y1="270" x2="290" y2="300"/>
+  <line class="arw" x1="380" y1="325" x2="410" y2="325"/>
+</svg>
+<div class="caption">Figure&nbsp;10.1 &nbsp;&mdash;&nbsp; End-to-end user workflow. The
+same result stage is reached by all six personas; the intermediate steps differ in
+question wording, defaults, and which cards are shown in the result.</div>
+</div>
+
+<h3>Wizard behaviour</h3>
+<ul class="tight">
+<li><strong>Skippable everywhere.</strong> Every technical question includes an "I
+don't know" or "help me estimate" branch. Skipping is honest, not free: the assumption
+that fills the gap is recorded in the ledger, and the uncertainty band widens.</li>
+<li><strong>Draft persistence.</strong> Answers are saved to
+<code>localStorage</code> as the user types (<code>lib/draft.ts</code>), so a page
+refresh, a phone lock or a network blip does not restart the interview.</li>
+<li><strong>Progressive disclosure.</strong> Quick mode presents the essentials only;
+Detailed mode reveals orientation, inverter, loss overrides and degradation.</li>
+<li><strong>Deterministic loading stages.</strong> The <code>LoadingStages</code>
+component reflects real work: location resolution &rarr; weather &rarr; orientation
+search &rarr; final yield &rarr; balance &rarr; economics. The stages are never marked
+finished before the backend reports them done (enforced by
+<code>frontend/tests/components.test.tsx</code>).</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                        11. ADAPTIVE QUESTIONNAIRE
+=========================================================================== -->
+<section>
+<h2><span class="section-num">11</span>Adaptive Questionnaire</h2>
+
+<p>
+The interview is data, not code. <code>backend/app/estimate/personas.py</code> (1&nbsp;256
+lines) declares every question, its wording, its help text, a spoken form for a future
+voice interface, and &mdash; where the answer is technical &mdash; an explicit "I don't
+know" branch that names the assumption the platform will use instead. The React
+components render whatever <code>GET /api/meta/interview</code> returns.
+</p>
+
+<h3>Question kinds</h3>
+<p>
+Twelve question kinds cover the interview:
+</p>
+<div class="grid2">
+<div>
+<ul class="tight">
+<li><span class="pill">single_choice</span> radio-group selection</li>
+<li><span class="pill">multi_choice</span> checkbox group</li>
+<li><span class="pill">number</span> numeric input</li>
+<li><span class="pill">currency</span> money input with regional symbol</li>
+<li><span class="pill">area</span> area with unit switcher (m² / ft² / ac / ha)</li>
+<li><span class="pill">location</span> place search + map + GPS</li>
+</ul>
+</div>
+<div>
+<ul class="tight">
+<li><span class="pill">equipment_list</span> add-one-at-a-time appliance builder</li>
+<li><span class="pill">pump_list</span> HP + head + hours entry</li>
+<li><span class="pill">boolean</span> yes/no toggle</li>
+<li><span class="pill">text</span> free text</li>
+<li><span class="pill">info</span> read-only explainer card</li>
+</ul>
+</div>
+</div>
+
+<h3>Beginner mode vs Detailed mode</h3>
+<table>
+<thead>
+<tr><th></th><th>Quick Estimate</th><th>Detailed Analysis</th></tr>
+</thead>
+<tbody>
+<tr><td>Consumption</td><td>Monthly bill or kWh only</td><td>Above plus equipment list / floor-area / pump list</td></tr>
+<tr><td>Space</td><td>One number, one unit</td><td>Add length × width or polygon-on-map</td></tr>
+<tr><td>Panel</td><td>Assumed technology, count derived</td><td>Choose technology, wattage, model, dimensions, V<sub>oc</sub>, I<sub>sc</sub>, V<sub>mp</sub>, I<sub>mp</sub></td></tr>
+<tr><td>Orientation</td><td>Auto-searched</td><td>Manual tilt / azimuth entry</td></tr>
+<tr><td>Losses</td><td>PVWatts default stack</td><td>Per-loss overrides (dust, wiring, mismatch, availability, LID)</td></tr>
+<tr><td>Inverter</td><td>DC/AC 1.2, η = 0.96</td><td>Explicit AC capacity or DC/AC ratio, η override</td></tr>
+<tr><td>Lifetime &amp; degradation</td><td>25 y, 0.5&nbsp;%/y</td><td>Editable</td></tr>
+</tbody>
+</table>
+
+<h3>Escape routes</h3>
+<p>
+Wherever the question is technical, at least one of these is offered:
+</p>
+<ul class="tight">
+<li><em>I don't know &mdash; use the typical value</em>: engine substitutes the market-typical default, records it in the ledger with <code>provenance="market_typical"</code>, and widens the uncertainty band.</li>
+<li><em>Help me estimate</em>: opens a sub-flow (e.g. equipment builder for consumption; L&nbsp;&times;&nbsp;W for area).</li>
+<li><em>My installer said &hellip;</em>: pass-through numeric with <code>provenance="user_supplied"</code>.</li>
+</ul>
+<p>
+The transparency contract is enforced end-to-end: any figure appearing in the result
+has a corresponding row in the assumption ledger, and any ledger row with
+<code>editable=True</code> can be changed post-hoc through
+<code>POST /api/estimate/{id}/update</code>, which re-runs the pipeline against the
+cached weather in about a second.
+</p>
+</section>
+
+<!-- ==========================================================================
+                              12. USER-TYPE LOGIC
+=========================================================================== -->
+<section>
+<h2><span class="section-num">12</span>User-Type Logic</h2>
+
+<table>
+<thead>
+<tr><th>User type</th><th>Interview inputs actually collected</th><th>Result cards emphasised</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>home</strong></td>
+<td>location · monthly bill or kWh · roof area · panel tech (optional) · battery (optional) · shading level · tariff (regional)</td>
+<td>Monthly savings · payback · offset&nbsp;% · CO<sub>2</sub> avoided</td>
+</tr>
+<tr>
+<td><strong>farm</strong></td>
+<td>location · farm loads (multi) · pump HP + head · required daily water m³ · crop water mm/day · monthly kWh (optional) · shed area (optional)</td>
+<td>Daily pumping hours (best/worst month) · daily water m³ · irrigable area · subsidy note</td>
+</tr>
+<tr>
+<td><strong>shop</strong></td>
+<td>location · business type · operating hours · bill or kWh · roof area · grid connection · tariff</td>
+<td>Daytime self-consumption · offset&nbsp;% · payback · monthly savings</td>
+</tr>
+<tr>
+<td><strong>commercial</strong></td>
+<td>location · facility type · peak demand kW (optional) · connected load kW (optional) · operating hours · offset target&nbsp;% · grid connection · roof area · tariff</td>
+<td>Solar offset&nbsp;% · self-consumption · lifetime CO<sub>2</sub> · peak-demand caveat</td>
+</tr>
+<tr>
+<td><strong>institution</strong></td>
+<td>location · facility type (school / college / hospital / temple / government) · operating hours · monthly bill · roof area</td>
+<td>Term-time balance · offset&nbsp;% · CO<sub>2</sub> equivalences · community-friendly language</td>
+</tr>
+<tr>
+<td><strong>exploring</strong></td>
+<td>location (minimum) · everything else optional</td>
+<td>Site potential (specific yield · capacity factor · best/worst month)</td>
+</tr>
+</tbody>
+</table>
+<p class="caption">Table&nbsp;12.1 &nbsp;&mdash;&nbsp; Inputs actually collected per user
+type (from <code>personas.py</code>). Blank cells are always optional; the engine
+returns partial results with warnings rather than refusing.</p>
+
+<p>
+User-type also selects the <strong>hourly load archetype</strong> used to compute
+self-consumption in <code>estimate/balance.py</code>: a home load peaks in the evening,
+a farm load peaks around midday, an institution follows a school-day rectangle, a shop
+tracks operating hours. Where the user supplies operating hours or a business type,
+those refine the archetype further.
+</p>
+</section>
+
+<!-- ==========================================================================
+                              13. LOCATION SYSTEM
+=========================================================================== -->
+<section>
+<h2><span class="section-num">13</span>Location System</h2>
+
+<p>
+The location step accepts three inputs interchangeably, and reconciles them all to a
+resolved <code>Location</code> object with latitude, longitude, elevation, timezone,
+country, ISO&nbsp;2 country code and admin&nbsp;1 region.
+</p>
+
+<h3>Input methods</h3>
+<ol>
+<li><strong>Place search.</strong> Typed query &rarr; <code>GET /api/meta/place_search?q=&hellip;</code>
+&rarr; Open-Meteo Geocoding (GeoNames source). Returns up to 10 candidates ordered by
+population, each with country, admin1, timezone and elevation.</li>
+<li><strong>GPS auto-locate.</strong> Browser Geolocation API &rarr; reverse geocode
+via <code>GET /api/locations/reverse</code> (OpenStreetMap Nominatim). Coordinates are
+rounded before the reverse-geocode request &mdash; this improves cache hit rate and
+sends less location precision to a third party.</li>
+<li><strong>Map-pin drop / polygon draw.</strong> The hand-rolled Web Mercator tile
+map in <code>components/estimate/map/TileMap.tsx</code> supports a single pin (for
+the site) and an optional polygon (for available area). Polygon area is computed on
+the client using the shoelace formula on projected coordinates &mdash; correctness of
+that projection is enforced by <code>frontend/tests/logic.test.ts</code>.</li>
+</ol>
+
+<h3>What happens after a location is selected</h3>
+<ol class="tight">
+<li>Backend <code>resolve_location()</code> normalises coordinates to a
+<code>Location</code>, adding country code, timezone and elevation from the geocoder.</li>
+<li>The country code chooses currency (<code>tariffs.currency_for_country</code>) and
+default tariff (<code>tariffs.default_tariff</code>). Both are recorded in the ledger
+as <code>provenance="regional_default"</code> and are editable.</li>
+<li>The engine fetches 3 years of hourly ERA5 weather at those coordinates
+(<code>climatology.fetch_history</code>) &mdash; a single fetch that is reused for the
+orientation search, the reference yield and the final yield.</li>
+<li>All timestamps are converted from UTC to local clock time using the timezone the
+geocoder supplied; if none was supplied, a longitude-based solar-time offset is used,
+which is the right fallback for a solar calculation because it puts noon at solar
+noon.</li>
+</ol>
+
+<h3>Fallback behaviour</h3>
+<ul class="tight">
+<li>Denied GPS permission &rarr; the location step falls back cleanly to search + map;
+tested end-to-end.</li>
+<li>Unknown place-search query &rarr; the API returns a structured 404 with a remedy
+message ("Try a larger nearby city, add a country, or switch to coordinate entry").</li>
+<li>Reverse geocode failure &rarr; the coordinate is used verbatim with a synthesised
+label like "27.18&deg;N, 78.04&deg;E"; the estimate still runs.</li>
+<li>Missing timezone &rarr; longitude-derived offset applied silently.</li>
+</ul>
+
+<h3>Map engine swap</h3>
+<p>
+The default map (<code>TileMap.tsx</code>, ~250&nbsp;LOC, zero external runtime
+dependencies) supports pin, polygon and pan/zoom. Setting the environment variable
+<code>NEXT_PUBLIC_MAP_ENGINE=leaflet</code> at build time swaps in a Leaflet-backed
+adapter behind the same <code>MapPicker</code> interface. Leaflet is dynamically
+imported so it is absent from every bundle unless selected.
+</p>
+
+<div class="callout">
+<span class="label">Privacy note:</span> Coordinates are rounded before being sent to
+OpenStreetMap Nominatim. The consumer surface stores no location data server-side except
+inside the opaque saved-estimate record the user chose to save.
+</div>
+</section>
+
+<!-- ==========================================================================
+                       14. ENERGY CONSUMPTION MODEL
+=========================================================================== -->
+<section>
+<h2><span class="section-num">14</span>Energy Consumption Model</h2>
+
+<p>
+Consumption is collected through one of four independent routes (implemented in
+<code>backend/app/estimate/demand.py</code>). Each returns a <code>DemandEstimate</code>
+carrying annual&nbsp;kWh, an hourly load profile (24 values), a confidence label and a
+plain-language basis. The engine chooses the route from the user's answer to <em>How
+would you like to tell us about your electricity use?</em>.
+</p>
+
+<table>
+<thead>
+<tr><th>Route</th><th>Input(s)</th><th>Basis</th><th>Confidence</th></tr>
+</thead>
+<tbody>
+<tr><td><em>bill</em></td><td>Monthly bill amount, currency</td><td>Bill minus fixed monthly charge, divided by tariff (regional default unless user overrides).</td><td>Medium; sensitive to tariff.</td></tr>
+<tr><td><em>units</em></td><td>Monthly kWh</td><td>Direct.</td><td>High.</td></tr>
+<tr><td><em>equipment</em></td><td>Appliance list (count · hours/day · optional watts override) and/or pump list</td><td>Sum of <code>W &times; count &times; hours &times; duty_cycle</code> across items; motors converted from HP using <code>WATTS_PER_HP = 745.7</code> and a default motor efficiency of 0.75.</td><td>Medium; depends on user's memory.</td></tr>
+<tr><td><em>floor_area</em></td><td>Floor area m² and occupants (optional)</td><td>User-type benchmark per m² multiplied by area; adjusted by occupants for homes.</td><td>Low; explicit placeholder.</td></tr>
+</tbody>
+</table>
+<p class="caption">Table&nbsp;14.1 &nbsp;&mdash;&nbsp; Consumption routes. Every route
+produces both the annual figure and an hourly shape so that self-consumption can be
+computed at the same resolution as generation.</p>
+
+<h3>Converting bill to kWh</h3>
+<p>The full formula, as applied:</p>
+<pre>monthly_kwh = max(0, (monthly_bill - fixed_monthly_charge) / rate_per_kwh)
+annual_kwh  = monthly_kwh × 12</pre>
+<p>
+Both <code>rate_per_kwh</code> and <code>fixed_monthly_charge</code> come from the
+country-and-user-type default in <code>tariffs.py</code> unless the user overrides
+them; both appear in the ledger as editable, and updating either from the result view
+re-runs the pipeline.
+</p>
+
+<h3>Hourly load archetypes</h3>
+<p>
+Six archetypes ship, one per user type, normalised to unit area under the curve so
+that they can be scaled to whichever annual figure the route returned. The archetypes
+are approximations of typical daily shapes; the interface labels them as such wherever
+they reach the user, and a note recommends interval-meter data as the sharper input.
+</p>
+
+<h3>Equipment catalogue</h3>
+<p>
+The equipment builder is populated from a curated catalogue (<code>APPLIANCES</code>
+in <code>demand.py</code>) covering lighting, comfort (fans, AC by ton), kitchen,
+laundry, entertainment, computing, water-heating, refrigeration (with duty cycle),
+farm loads and shop loads. Each item has a typical wattage, default hours-per-day and
+a plain-hint string; each is user-editable in place, and the catalogue is filtered by
+user type so a farm never sees a projector and a school never sees a threshing
+machine.
+</p>
+</section>
+
+<!-- ==========================================================================
+                        15. SOLAR PANEL SYSTEM
+=========================================================================== -->
+<section>
+<h2><span class="section-num">15</span>Solar Panel System</h2>
+
+<p>
+Panel technology, wattage, count and dimensions are recorded in
+<code>backend/app/estimate/assumptions.py</code> and used by both the sizing and the
+physical chain.
+</p>
+
+<h3>Supported panel technologies (implemented)</h3>
+<table>
+<thead>
+<tr><th>Key</th><th>Display name</th><th>Efficiency (typ.)</th><th>Temperature coefficient (P<sub>max</sub>)</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mono_perc</code></td><td>Monocrystalline PERC (default)</td><td>~20.5&nbsp;%</td><td>&minus;0.35&nbsp;%/&deg;C</td></tr>
+<tr><td><code>mono</code></td><td>Monocrystalline (standard)</td><td>~19.0&nbsp;%</td><td>&minus;0.40&nbsp;%/&deg;C</td></tr>
+<tr><td><code>poly</code></td><td>Polycrystalline</td><td>~17.0&nbsp;%</td><td>&minus;0.42&nbsp;%/&deg;C</td></tr>
+<tr><td><code>topcon</code></td><td>TOPCon (tunnel-oxide passivated contact)</td><td>~22.0&nbsp;%</td><td>&minus;0.30&nbsp;%/&deg;C</td></tr>
+<tr><td><code>hjt</code></td><td>Heterojunction (HJT)</td><td>~22.5&nbsp;%</td><td>&minus;0.25&nbsp;%/&deg;C</td></tr>
+<tr><td><code>bifacial</code></td><td>Bifacial (Mono-PERC front, bifacial rear)</td><td>~20.5&nbsp;% + rear-side gain</td><td>&minus;0.34&nbsp;%/&deg;C</td></tr>
+<tr><td><code>thin_film</code></td><td>Thin-film (CdTe / CIGS)</td><td>~13.0&nbsp;%</td><td>&minus;0.25&nbsp;%/&deg;C</td></tr>
+</tbody>
+</table>
+<p class="caption">Table&nbsp;15.1 &nbsp;&mdash;&nbsp; Panel technologies actually
+supported (from <code>PANEL_TECHNOLOGIES</code> in <code>assumptions.py</code>).
+Each entry is labelled as market-typical unless the user overrides it.</p>
+
+<h3>Parameters collected from the user</h3>
+<ul class="tight">
+<li><strong>Technology key</strong> &mdash; picks default efficiency and temperature
+coefficient.</li>
+<li><strong>Wattage</strong> (W) &mdash; per-panel rating.</li>
+<li><strong>Panel count</strong> &mdash; integer, wins over any computed capacity.</li>
+<li><strong>Model / manufacturer text</strong> &mdash; recorded verbatim in the ledger
+for the user's reference; no catalogue is consulted.</li>
+<li><strong>Length &amp; width (m)</strong> &mdash; when supplied, used directly for
+footprint; otherwise the footprint is derived from wattage and efficiency.</li>
+<li><strong>V<sub>oc</sub>, I<sub>sc</sub>, V<sub>mp</sub>, I<sub>mp</sub></strong>
+&mdash; nameplate electrical values, recorded in the specification card but not fed
+into the daily-yield calculation (see below).</li>
+<li><strong>Tilt (&deg;)</strong>, <strong>azimuth (&deg;)</strong>,
+<strong>shading level</strong> (light / moderate / heavy / unknown), <strong>inverter
+efficiency</strong>, <strong>inverter AC capacity</strong> or
+<strong>DC/AC ratio</strong>, <strong>degradation rate</strong>,
+<strong>lifetime years</strong>.</li>
+</ul>
+
+<h3>Which parameters influence the prediction</h3>
+<p>
+The daily-yield calculation depends on: <em>panel count</em>, <em>panel wattage</em>
+(together fixing the DC capacity), <em>technology's temperature coefficient</em>
+(applied in the PVWatts DC model), <em>system loss stack</em> (dust, shading, wiring,
+mismatch, availability, LID &mdash; combined and multiplied), <em>inverter efficiency
+and AC cap</em> (applied after DC and driving the clipping mask), <em>tilt and
+azimuth</em> (fed into HDKR), and <em>albedo</em> (default 0.20). The nameplate
+electrical values (V<sub>oc</sub>, I<sub>sc</sub>, V<sub>mp</sub>, I<sub>mp</sub>)
+appear in the report for hand-off to an installer but do not enter the yield
+calculation, which is capacity-based.
+</p>
+
+<div class="callout">
+<span class="label">Bifacial:</span> The bifacial entry currently uses a Mono-PERC
+front-side model with a small rear-side yield adder; a full bifacial radiation model
+(Marion / view-factor) is <em>not verified in the current implementation</em> and is
+listed as future work.
+</div>
+</section>
+
+<!-- ==========================================================================
+                    16. PANEL QUANTITY AND SYSTEM CAPACITY
+=========================================================================== -->
+<section>
+<h2><span class="section-num">16</span>Panel Quantity and System Capacity</h2>
+
+<p>The identity is intentionally exact:</p>
+<pre>DC capacity (kWp) = Number of panels × Rated power per panel (W) ÷ 1000</pre>
+<p>
+&mdash; and it is the <em>panel count</em>, not the sizer's target capacity, that wins.
+A recommendation of 15.4&nbsp;kWp becomes an array of 28 panels of 550&nbsp;W = 15.40
+kWp exactly; a recommendation of 15.5&nbsp;kWp with the same panel becomes 29 panels =
+15.95&nbsp;kWp. Every downstream figure is computed for the array that will actually
+exist.
+</p>
+
+<h3>Effects of panel count on downstream figures</h3>
+<ul class="tight">
+<li><strong>DC capacity</strong> &mdash; linear.</li>
+<li><strong>Annual generation</strong> &mdash; approximately linear in capacity, less
+inverter clipping. Clipping grows non-linearly as DC/AC ratio rises above 1.2.</li>
+<li><strong>Roof area required</strong> &mdash; count &times; panel area &divide;
+usable fraction (usable fraction depends on mount type; e.g. tilted-open-rack rooftop is
+lower than commercial flat roof).</li>
+<li><strong>Inverter sizing</strong> &mdash; AC capacity defaults to <code>DC /
+1.2</code>; explicit values from the user override.</li>
+<li><strong>Clipping</strong> &mdash; every hour with <code>DC · &eta;<sub>inv</sub></code>
+above AC cap is clipped; the fraction is reported and warns above 2&nbsp;%.</li>
+<li><strong>Financial outputs</strong> &mdash; CAPEX per kWp is a per-region default
+that decreases mildly with size (bulk discount); annual savings scale with generation
+subject to self-consumption and export rules.</li>
+</ul>
+
+<h3>Behaviour by goal</h3>
+<table>
+<thead>
+<tr><th>Goal</th><th>Panel count</th><th>Sizer</th><th>Reported binding constraint</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>existing</strong></td><td>User input, required</td><td>Bypassed</td><td><code>existing_system</code></td></tr>
+<tr><td><strong>install</strong>, count given</td><td>User input</td><td>Runs but the user's count wins</td><td><code>user_specified</code></td></tr>
+<tr><td><strong>install</strong>, count blank</td><td>Derived by sizer, quantised to whole panels</td><td>Runs</td><td>One of <code>demand</code> · <code>space</code> · <code>budget</code></td></tr>
+<tr><td><strong>compare</strong></td><td>Multiple counts / capacities evaluated in one call</td><td>Runs per scenario</td><td>Per row</td></tr>
+</tbody>
+</table>
+
+<h3>Worked illustrative example</h3>
+<pre>Panel:            550 W · Mono PERC (efficiency 20.5 %, temp-coef -0.35 %/°C)
+Panel count:      28
+DC capacity:      28 × 550 / 1000 = 15.40 kWp
+Inverter AC cap:  15.40 / 1.2 = 12.83 kW (default DC/AC = 1.2)
+Panel footprint:  28 × 2.68 m² ≈ 75 m²  (before usable fraction)
+Buildable area:   75 / 0.7 ≈ 107 m²  (tilted rooftop; usable fraction 0.70)
+
+At Hyderabad (17.4°N, 78.5°E), specific yield ≈ 1500 kWh/kWp/yr:
+    Annual generation ≈ 15.40 × 1500 = 23 100 kWh
+    Uncertainty band  ≈ ±10 % (weather variability + assumption terms)</pre>
+<p class="caption">Figure&nbsp;16.1 &nbsp;&mdash;&nbsp; Illustrative panel-count &rarr;
+capacity &rarr; yield chain. Numbers are representative, not measured.</p>
+</section>
+
+<!-- ==========================================================================
+                    17. SOLAR ENERGY PREDICTION METHODOLOGY
+=========================================================================== -->
+<section id="sec17">
+<h2><span class="section-num">17</span>Solar Energy Prediction Methodology</h2>
+
+<p>
+This is the most important section of the document. There are <strong>two prediction
+paths</strong> in the platform, and they answer different questions:
+</p>
+
+<table>
+<thead>
+<tr><th></th><th>Fast path (consumer)</th><th>Forward-looking path (research console)</th></tr>
+</thead>
+<tbody>
+<tr><td>Question</td><td>What will this system produce in a typical year?</td><td>What will irradiance be at this specific hour tomorrow?</td></tr>
+<tr><td>Approach</td><td>Deterministic physical chain over N years of ERA5 weather at the coordinates.</td><td>Machine-learning model trained on features derived from the same weather.</td></tr>
+<tr><td>Training</td><td>None. Nothing is fitted; nothing needs to be.</td><td>scikit-learn estimator with time-aware validation and calibrated intervals.</td></tr>
+<tr><td>Range</td><td>Measured inter-annual variability + named assumption components.</td><td>Conformalised Quantile Regression (nominal 80&nbsp;% coverage; recalibrated).</td></tr>
+<tr><td>Latency</td><td>~1&nbsp;s cached, ~15&nbsp;s for a new location.</td><td>10&ndash;40&nbsp;s.</td></tr>
+</tbody>
+</table>
+
+<h3>Why the consumer path does not train a model</h3>
+<p>
+A consumer asks what a system will produce <em>in a typical year</em>. That is a
+climatology question, and the honest answer comes from running the published physical
+chain over years of observed weather. Training a model to forecast hour-ahead irradiance
+and then averaging its predictions adds nothing to an aggregate the physical chain
+already produces &mdash; and would cost about thirty seconds of training to say the same
+thing.
+</p>
+
+<h3>The deterministic physical chain (used by both paths)</h3>
+<ol>
+<li><strong>Solar geometry</strong> &mdash; NOAA Solar Calculator formulation
+(Michalsky 1988; NOAA ESRL). Accuracy ~0.01&deg; over 1900&ndash;2100. Outputs zenith,
+azimuth, declination, equation of time, hour angle. Solar position is evaluated at the
+interval midpoint (<em>&minus;30&nbsp;min</em> from the label) because the archive's
+hourly irradiance is a preceding-hour average &mdash; a convention determined
+empirically in <code>scripts/calibrate_interval.py</code> (see &sect;&nbsp;18).</li>
+<li><strong>Extraterrestrial irradiance</strong> &mdash; solar constant 1&nbsp;361
+W/m<sup>2</sup> modulated by orbital eccentricity (&plusmn;3.3&nbsp;% over the year).</li>
+<li><strong>Clear-sky reference</strong> &mdash; Haurwitz (1945) model, single
+parameter, no site tuning. Used to form the clear-sky index
+<em>k<sub>t</sub></em> = <em>GHI</em>&nbsp;/&nbsp;<em>GHI<sub>cs</sub></em>.</li>
+<li><strong>DHI/DNI decomposition</strong> &mdash; Erbs et al. (1982) piecewise
+diffuse-fraction, keyed on <em>k<sub>t</sub></em> and clipped to
+[0,&nbsp;1].</li>
+<li><strong>Transposition to plane-of-array</strong> &mdash; HDKR
+(Hay-Davies-Klucher-Reindl) anisotropic sky model. Adds circumsolar brightening and
+horizon brightening on top of an isotropic diffuse assumption.</li>
+<li><strong>Cell temperature</strong> &mdash; Faiman (2008):
+<em>T<sub>cell</sub> = T<sub>air</sub> + POA / (u<sub>0</sub> + u<sub>1</sub>·v<sub>wind</sub>)</em>
+with u<sub>0</sub>&nbsp;=&nbsp;25&nbsp;W/(m<sup>2</sup>K),
+u<sub>1</sub>&nbsp;=&nbsp;6.84&nbsp;W/(m<sup>3</sup>s&nbsp;K).</li>
+<li><strong>DC power</strong> &mdash; PVWatts v5 (Dobos 2014):
+<em>P<sub>dc</sub> = (POA/1000) &middot; P<sub>rated</sub> &middot; [1 + &gamma;(T<sub>cell</sub>&minus;25)] &middot; (1&minus;L)</em>
+where <em>L</em> is the total system-losses fraction (dust, shading, wiring,
+mismatch, availability, LID; combined multiplicatively).</li>
+<li><strong>Inverter and clipping</strong> &mdash;
+<em>P<sub>ac,uncapped</sub> = P<sub>dc</sub> &middot; &eta;<sub>inv</sub></em>;
+<em>P<sub>ac</sub> = min(P<sub>ac,uncapped</sub>, P<sub>AC-cap</sub>)</em>. The
+fraction of daylight hours in which clipping occurred is reported.</li>
+</ol>
+
+<h3>How the consumer path aggregates</h3>
+<ol class="tight">
+<li>Fetch 3 years of hourly ERA5 at the coordinates (default; configurable).</li>
+<li>Drop hours missing any required variable (GHI, T<sub>air</sub>, wind); imputation
+is <em>never</em> used.</li>
+<li>Search tilt&nbsp;/&nbsp;azimuth against the same weather using the same physical
+chain at 1&nbsp;kWp (see <code>sizing.optimal_orientation</code>).</li>
+<li>Run the chain twice: once at 1&nbsp;kWp to obtain specific yield (needed for
+capacity recommendation), then once at the sized capacity (needed to capture inverter
+clipping, which is not capacity-invariant).</li>
+<li>Aggregate hourly AC power into (a) annual energy, (b) monthly means and
+inter-annual standard deviations, (c) mean diurnal profile, (d) per-month diurnal
+profiles.</li>
+<li>Compute performance ratio, capacity factor, specific yield, mean POA/GHI, and
+clipped fraction.</li>
+</ol>
+
+<h3>Uncertainty attached to the point figure</h3>
+<p>See &sect;&nbsp;18 and &sect;&nbsp;23 for the full decomposition. Briefly: the range
+combines <em>measured</em> inter-annual variability, an order-of-magnitude resource
+term (grid vs point), a model term for the conversion chain itself, and per-assumption
+components that grow whenever the user skipped a question. Combination is in
+quadrature (independent components).</p>
+
+<h3>What the fast path deliberately does <em>not</em> do</h3>
+<ul class="tight">
+<li>Does not use lagged values of the target. A day-ahead forecast has no access to
+the recent observed irradiance; using it would inflate offline metrics without helping
+in deployment.</li>
+<li>Does not statistically truncate the target (no IQR clipping). Physical-range
+validation only.</li>
+<li>Does not impute missing values. Incomplete hours are dropped and reported.</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                18. MATHEMATICAL MODEL — FORMULAS USED
+=========================================================================== -->
+<section>
+<h2><span class="section-num">18</span>Mathematical Model &mdash; Formulas Used</h2>
+
+<h3>18.1 System capacity</h3>
+<pre>P_rated_kWp = N_panels × W_panel / 1000
+</pre>
+
+<h3>18.2 Solar geometry</h3>
+<p>Julian day from Unix epoch (avoiding calendar-branch bugs):</p>
+<pre>JD = seconds_since_epoch / 86400 + 2 440 587.5
+JC = (JD − 2 451 545) / 36 525          # Julian century since J2000
+</pre>
+<p>Solar declination and equation of time follow the NOAA Solar Calculator
+formulation. Zenith and azimuth are obtained from:</p>
+<pre>cos(z)  = sin(φ)·sin(δ) + cos(φ)·cos(δ)·cos(H)
+z_app   = z − Δrefract(z)               # atmospheric refraction correction
+</pre>
+<p>where <em>&phi;</em> is latitude, <em>&delta;</em> declination, and <em>H</em>
+hour-angle in radians.</p>
+
+<h3>18.3 Extraterrestrial normal irradiance</h3>
+<pre>E_0n = 1361 · [1 + 0.033 · cos(2π · DOY / 365)]    W/m²</pre>
+
+<h3>18.4 Clear-sky GHI (Haurwitz 1945)</h3>
+<pre>GHI_cs = 1098 · cos(z_app) · exp(−0.059 / cos(z_app))     W/m²</pre>
+
+<h3>18.5 Clear-sky index</h3>
+<pre>k_t = clip(GHI / GHI_cs, 0, 1.5)     # cap accommodates cloud enhancement</pre>
+
+<h3>18.6 Erbs decomposition</h3>
+<p>With <em>k<sub>T</sub></em>&nbsp;=&nbsp;<em>GHI</em>&nbsp;/&nbsp;<em>E<sub>0h</sub></em>
+(<em>E<sub>0h</sub></em> the horizontal extraterrestrial):</p>
+<pre>d_f = { 1 − 0.09·k_T                                          if k_T ≤ 0.22
+      { 0.9511 − 0.1604·k_T + 4.388·k_T² − 16.638·k_T³ + 12.336·k_T⁴   if 0.22 < k_T ≤ 0.80
+      { 0.165                                                if k_T > 0.80
+
+DHI = GHI · d_f
+DNI = (GHI − DHI) / cos(z_app)</pre>
+
+<h3>18.7 Plane-of-array via HDKR</h3>
+<pre>A_i  = DNI / E_0n                       # anisotropy index
+R_b  = cos(AOI) / cos(z_app)
+f    = √(DNI·cos(z_app) / GHI)          # horizon-brightening modulator
+
+POA = DNI · cos(AOI)                                          # beam
+    + DHI · [ (1−A_i)·(1+cos β)/2 · (1 + f·sin³(β/2))         # sky diffuse
+              + A_i · R_b ]
+    + GHI · ρ · (1 − cos β)/2                                 # ground-reflected
+</pre>
+<p>where <em>&beta;</em> is surface tilt, <em>&rho;</em>&nbsp;=&nbsp;0.20 is default
+albedo, and <em>AOI</em> is angle of incidence:</p>
+<pre>cos(AOI) = cos(z)·cos(β) + sin(z)·sin(β)·cos(γ_s − γ)</pre>
+<p>with <em>&gamma;</em> the surface azimuth and <em>&gamma;<sub>s</sub></em> the
+solar azimuth.</p>
+
+<h3>18.8 Cell temperature (Faiman 2008)</h3>
+<pre>T_cell = T_air + POA / (u_0 + u_1 · v_wind)
+u_0 = 25   W/(m²·K)   ; u_1 = 6.84   W/(m³·s·K)
+</pre>
+
+<h3>18.9 DC power (PVWatts v5)</h3>
+<pre>P_dc = (POA / 1000) · P_rated_kWp · [1 + γ · (T_cell − 25)] · (1 − L)</pre>
+<p>with <em>&gamma;</em> the temperature coefficient (per &deg;C) and <em>L</em> the
+combined system-losses fraction.</p>
+
+<h3>18.10 Losses (combined multiplicatively)</h3>
+<pre>1 − L = ∏_i (1 − L_i)      i ∈ {dust, shading, wiring, mismatch, availability, LID, …}</pre>
+
+<h3>18.11 Inverter and clipping</h3>
+<pre>P_ac_uncapped = P_dc · η_inv
+P_ac          = min(P_ac_uncapped, P_AC_cap)
+clipped_h     = 1[P_ac_uncapped > P_AC_cap]</pre>
+
+<h3>18.12 Interval-labelling correction (empirical)</h3>
+<p>ERA5 hourly radiation is a preceding-hour average; solar position is instantaneous.
+Evaluating position at the label introduces a phase error. Sweeping candidate offsets
+over a year at Hyderabad established the correction; the winning offset is used in
+<code>representative_times()</code>:</p>
+<table>
+<thead><tr><th>Offset</th><th>Clear-sky exceedances</th><th>corr(GHI, clear-sky)</th></tr></thead>
+<tbody>
+<tr><td>0 min</td><td>264</td><td>0.9372</td></tr>
+<tr><td><strong>&minus;30 min</strong></td><td><strong>0</strong></td><td><strong>0.9490</strong></td></tr>
+<tr><td>+30 min</td><td>697</td><td>0.8998</td></tr>
+</tbody>
+</table>
+<p class="caption">Table&nbsp;18.1 &nbsp;&mdash;&nbsp; Interval-offset sweep result;
+reproducible via <code>python scripts/calibrate_interval.py</code>.</p>
+
+<h3>18.13 Consumption from bill</h3>
+<pre>E_month = max(0, (B_month − F) / r_kwh)
+E_year  = 12 · E_month</pre>
+<p><em>B<sub>month</sub></em> monthly bill; <em>F</em> fixed monthly charge;
+<em>r<sub>kwh</sub></em> import tariff.</p>
+
+<h3>18.14 Uncertainty combination (in quadrature)</h3>
+<pre>σ_total² = σ_weather² + σ_resource² + σ_model² + Σ_i σ_assumption_i²
+lower = P − z · σ_total    ;    upper = P + z · σ_total
+</pre>
+<p>with <em>z</em>&nbsp;=&nbsp;1.2816 for a nominal 80&nbsp;% central band and
+<em>P</em> the point estimate (typical annual kWh).</p>
+
+<h3>18.15 Economics</h3>
+<pre>CAPEX      = c_kWp(currency) · P_rated_kWp + c_batt · E_battery
+Savings_y  = E_self_consumed_y · r_kwh_y + E_export_y · r_export_y − OM_y
+E_gen_y    = E_gen_1 · (1 − d)^(y−1)                # degradation
+r_kwh_y    = r_kwh_1 · (1 + esc)^(y−1)              # tariff escalation
+Payback    ≈ CAPEX / mean(Savings_y over first years)
+ROI (%)    = (Σ Savings_y − CAPEX) / CAPEX · 100
+LCOE       = (CAPEX + Σ OM_y_discounted) / Σ E_gen_y_discounted
+CO2_kg_y   = E_gen_y · EF_grid_country</pre>
+<p><em>d</em> degradation rate (default 0.5&nbsp;%/y), <em>esc</em> tariff escalation
+(configurable), <em>EF<sub>grid</sub></em> country-specific grid emission factor.</p>
+
+<h3>18.16 Pump hydraulics (farm)</h3>
+<pre>Q · H · g · ρ_water / 1000       # hydraulic kW
+P_electrical = P_hydraulic / (η_pump · η_motor)
+E_daily_gen_kWh · η_pump · η_motor · 1000 / (H · g · ρ)  = m³ pumped per day</pre>
+<p><em>Q</em> flow m³/s, <em>H</em> head m, <em>g</em>&nbsp;=&nbsp;9.81&nbsp;m/s²,
+<em>&eta;<sub>pump</sub></em> default 0.55, <em>&eta;<sub>motor</sub></em> default
+0.75.</p>
+</section>
+
+<!-- ==========================================================================
+                    19. MACHINE LEARNING MODEL (CONSOLE)
+=========================================================================== -->
+<section id="sec19">
+<h2><span class="section-num">19</span>Machine Learning Model (Analysis Console)</h2>
+
+<div class="callout">
+<span class="label">Scope note:</span> Machine learning applies only to the
+<em>research console</em> (<code>/advanced</code>), which trains a model to forecast
+hourly irradiance for validation and interval calibration. The consumer estimate does
+<em>not</em> use a trained model &mdash; it runs the physical chain over years of
+observed weather (see &sect;&nbsp;17).
+</div>
+
+<h3>Target</h3>
+<p>
+<strong>Clear-sky index</strong> <em>k<sub>t</sub></em>&nbsp;=&nbsp;<em>GHI</em>&nbsp;/&nbsp;<em>GHI<sub>cs</sub></em>,
+per Hobbs &amp; Joshi. Dividing out the deterministic diurnal and seasonal signal means
+the model only has to learn atmospheric attenuation &mdash; the genuinely uncertain
+part. Predictions are converted back to W/m<sup>2</sup> after inference for reporting.
+</p>
+
+<h3>Input features</h3>
+<ul class="tight">
+<li><strong>Meteorological</strong> (from ERA5): temperature, relative humidity, dew
+point, surface pressure, wind speed, wind direction, cloud cover, precipitation.</li>
+<li><strong>Solar geometry</strong> (computed in closed form): zenith, azimuth, angle
+of incidence, optical air mass, clear-sky GHI, extraterrestrial normal irradiance.</li>
+<li><strong>Cyclical time encodings</strong>: <em>sin</em>/<em>cos</em> of hour-of-day
+and day-of-year.</li>
+<li><strong>Weather regime label</strong>: sunny&nbsp;/&nbsp;cloudy&nbsp;/&nbsp;other,
+derived from cloud cover and clear-sky index.</li>
+</ul>
+<p>
+<strong>No lagged values of the target are used.</strong> At a day-ahead issue time
+the recent observed irradiance does not exist, so an autoregressive feature would
+improve every offline metric while being unavailable in deployment.
+</p>
+
+<h3>Preprocessing</h3>
+<ul class="tight">
+<li>Night hours (zenith &ge; 87&deg;) removed; predicting zero after dark is trivial and
+inflates R<sup>2</sup>.</li>
+<li>Missing values dropped, never imputed.</li>
+<li>Outliers: physical-range validation only; no IQR truncation of the target.</li>
+<li>Scaling: inside the model pipeline (StandardScaler), refitted per fold so test
+statistics never leak into training.</li>
+</ul>
+
+<h3>Model families (all in scikit-learn)</h3>
+<table>
+<thead>
+<tr><th>Key</th><th>Family</th><th>Hyperparameters (source)</th></tr>
+</thead>
+<tbody>
+<tr><td><code>random_forest</code></td><td>Bagged trees</td><td>n_est=300, min_samples_leaf=2, max_features=sqrt (raised from Mabodi &amp; Hammujuddy [P2] for stability)</td></tr>
+<tr><td><code>gradient_boosting</code></td><td>Boosted trees</td><td>lr=0.05, depth=5, n=150, subsample=0.8 (Vijay Babu et al. [P5] grid-search optimum)</td></tr>
+<tr><td><code>hist_gradient_boosting</code></td><td>Boosted (histogram)</td><td>lr=0.08, max_iter=300, l2=1.0 (standing in for XGBoost per [P2], [P3])</td></tr>
+<tr><td><code>extra_trees</code></td><td>Bagged trees</td><td>n=300, min_samples_leaf=2</td></tr>
+<tr><td><code>knn</code></td><td>Instance-based</td><td>k=5, p=1, distance-weighted (Mabodi &amp; Hammujuddy [P2] optimum)</td></tr>
+<tr><td><code>svr</code></td><td>Kernel (RBF)</td><td>C=100, &epsilon;=0.001 (Mabodi &amp; Hammujuddy [P2] optimum)</td></tr>
+<tr><td><code>ridge</code></td><td>Linear (L2)</td><td>&alpha;=1</td></tr>
+<tr><td><code>linear</code></td><td>OLS</td><td>&mdash;</td></tr>
+<tr><td><code>decision_tree</code></td><td>Tree</td><td>max_depth=12, min_samples_leaf=10</td></tr>
+<tr><td><code>stacking</code></td><td>Stacked ensemble</td><td>RF + DT + KNN + GB &rarr; Ridge (Rosales Huamani et al. [P4] best combo)</td></tr>
+<tr><td><code>voting</code></td><td>Averaged ensemble</td><td>RF + GB + ET, uniform weights</td></tr>
+</tbody>
+</table>
+
+<h3>Validation</h3>
+<ul class="tight">
+<li><strong>Chronological hold-out</strong> with a 24-hour embargo gap
+(<code>splitters.chronological_split</code>).</li>
+<li><strong>Rolling-origin cross-validation</strong> with the same embargo
+(<code>splitters.rolling_origin_splits</code>).</li>
+<li><strong>Five-check leakage audit</strong>: target, future information,
+preprocessing, boundary contamination, trivial observations.</li>
+<li><strong>Physical-bound post-processing</strong>: predictions above
+<code>1.25&nbsp;&times;&nbsp;GHI<sub>cs</sub></code> or below zero are clipped; the
+clipped-fraction is reported.</li>
+</ul>
+
+<h3>Prediction intervals</h3>
+<p>
+Nominal 80&nbsp;% central intervals via <strong>Conformalised Quantile Regression</strong>
+(<code>uncertainty.conformalized_quantile_regression</code>). On two years at
+Hyderabad, plain quantile regression measured 66.3&nbsp;% empirical coverage against
+the 80&nbsp;% nominal; after conformal calibration, 80.2&nbsp;%, within 2 points across
+all three weather regimes. Coverage is reported <em>per regime</em> as well as overall,
+because a model can hit 80&nbsp;% overall while badly under-covering the cloudy hours
+that matter most operationally.
+</p>
+
+<h3>Metrics reported</h3>
+<p>
+MAE, RMSE, MBE, R<sup>2</sup>, rRMSE, rMAE, MAPE, sMAPE, forecast skill score;
+probabilistic: pinball loss, PICP, PINAW, CRPS. Two honesty notes carried into the UI:
+NSE and R<sup>2</sup> are the same quantity (labelled aliased); MAPE is unstable for
+irradiance (denominator &rarr; 0 at sunrise) and always accompanied by its exclusion
+count.
+</p>
+
+<h3>Reproducibility manifest</h3>
+<p>
+Every run persists a manifest with the dataset fingerprint (SHA-256 of the feature
+matrix + target + names + period), the random seed, library versions (numpy, pandas,
+scikit-learn), the platform string, and the exact preprocessing decisions. The
+comparison endpoint refuses to rank runs that are not comparable (different locations,
+periods or targets).
+</p>
+</section>
+
+<!-- ==========================================================================
+                          20. WEATHER AND SOLAR DATA
+=========================================================================== -->
+<section>
+<h2><span class="section-num">20</span>Weather and Solar Data</h2>
+
+<h3>Primary source: Open-Meteo Historical Weather API</h3>
+<ul class="tight">
+<li><strong>Provider:</strong> Open-Meteo (CC-BY 4.0), sourcing ERA5 / ERA5-Land
+reanalysis (&copy; ECMWF / Copernicus).</li>
+<li><strong>Endpoint:</strong> <code>archive-api.open-meteo.com/v1/archive</code>.</li>
+<li><strong>Resolution:</strong> hourly, from 2000 onward, global grid.</li>
+<li><strong>Auth:</strong> none.</li>
+<li><strong>Cache:</strong> every response cached to disk under
+<code>backend/var/cache/</code>, keyed by SHA-256 of URL + parameters; TTL configurable
+via <code>SOLAR_CACHE_TTL</code>. This is what makes a recorded experiment reproducible
+later.</li>
+</ul>
+
+<h3>Variables retrieved (internal name &rarr; Open-Meteo name)</h3>
+<table>
+<thead><tr><th>Internal</th><th>Provider variable</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>ghi_wm2</code></td><td>shortwave_radiation</td><td>Physical chain input; also model target.</td></tr>
+<tr><td><code>dni_wm2</code></td><td>direct_normal_irradiance</td><td>Direct-normal, used where a source variant supplies it.</td></tr>
+<tr><td><code>dhi_wm2</code></td><td>diffuse_radiation</td><td>Diffuse-horizontal, used where a source variant supplies it.</td></tr>
+<tr><td><code>temperature_c</code></td><td>temperature_2m</td><td>Faiman cell-temperature input.</td></tr>
+<tr><td><code>relative_humidity_pct</code></td><td>relative_humidity_2m</td><td>Feature (ML path); quality signal.</td></tr>
+<tr><td><code>dew_point_c</code></td><td>dew_point_2m</td><td>Feature (ML path).</td></tr>
+<tr><td><code>surface_pressure_hpa</code></td><td>surface_pressure</td><td>Feature; optical-air-mass correction.</td></tr>
+<tr><td><code>wind_speed_ms</code></td><td>wind_speed_10m</td><td>Faiman cell-temperature input.</td></tr>
+<tr><td><code>wind_direction_deg</code></td><td>wind_direction_10m</td><td>Feature (ML path).</td></tr>
+<tr><td><code>cloud_cover_pct</code></td><td>cloud_cover</td><td>Feature; regime classifier.</td></tr>
+<tr><td><code>precipitation_mm</code></td><td>precipitation</td><td>Feature; quality flag.</td></tr>
+</tbody>
+</table>
+<p class="caption">Table&nbsp;20.1 &nbsp;&mdash;&nbsp; Weather variables actually
+retrieved (from <code>HOURLY_VARIABLES</code> in <code>data/sources.py</code>).</p>
+
+<h3>Secondary sources</h3>
+<ul class="tight">
+<li><strong>Open-Meteo Geocoding</strong> (GeoNames, CC-BY 4.0) &mdash; place name
+search and elevation.</li>
+<li><strong>OpenStreetMap Nominatim</strong> &mdash; reverse-geocoding a GPS fix or
+dropped pin to a place name.</li>
+<li><strong>Open-Meteo Forecast API</strong> &mdash; short-horizon meteorological
+forecast for the console's <em>Forecast</em> view.</li>
+</ul>
+
+<h3>Fallback and error handling</h3>
+<ul class="tight">
+<li>Upstream 4xx/5xx are translated into <code>DataSourceError</code> with a user-facing
+remedy string (e.g. "The upstream service is unavailable; cached results for previously
+requested periods still work").</li>
+<li>Cache is consulted before every fetch; a valid cache entry within TTL is served
+directly.</li>
+<li>Gaps in the record survive as NaN; the quality engine scores and reports them; no
+imputation is performed.</li>
+</ul>
+
+<h3>Limitation stated up-front</h3>
+<div class="callout">
+<span class="label">Reanalysis vs measurement:</span> ERA5 is a grid-cell average and
+differs systematically from a pyranometer on the user's roof. Results here are therefore
+<em>not</em> directly comparable to studies using measured irradiance. The platform
+labels every figure as physically modelled from reanalysis and, because no metered PV
+output was available, does not claim validation against measured generation.
+</div>
+</section>
+
+<!-- ==========================================================================
+                                21. DATA FLOW
+=========================================================================== -->
+<section>
+<h2><span class="section-num">21</span>Data Flow</h2>
+
+<div class="figure">
+<svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .box  { fill: #ffffff; stroke: #33405a; stroke-width: 1; }
+    .warm { fill: #fff7e8; stroke: #f5a623; stroke-width: 1.2; }
+    .cool { fill: #eef4fb; stroke: #33507a; stroke-width: 1.2; }
+    .lbl  { font: 9.8px "Inter", sans-serif; fill: #14181f; }
+    .sml  { font: 8.5px "Inter", sans-serif; fill: #55606f; }
+    .arw  { stroke: #33405a; stroke-width: 1; fill: none; marker-end: url(#a3); }
+  </style>
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#33405a"/>
+    </marker>
+  </defs>
+
+  <rect x="10"  y="20"  width="130" height="40" class="warm"/>
+  <text x="75"  y="43"  text-anchor="middle" class="lbl">User inputs</text>
+  <text x="75"  y="55"  text-anchor="middle" class="sml">wizard answers</text>
+
+  <rect x="160" y="20"  width="130" height="40" class="box"/>
+  <text x="225" y="43"  text-anchor="middle" class="lbl">Frontend state</text>
+  <text x="225" y="55"  text-anchor="middle" class="sml">EstimateWizard · draft</text>
+
+  <rect x="310" y="20"  width="130" height="40" class="box"/>
+  <text x="375" y="43"  text-anchor="middle" class="lbl">Client validation</text>
+  <text x="375" y="55"  text-anchor="middle" class="sml">form fields · lib/estimate.ts</text>
+
+  <rect x="460" y="20"  width="170" height="40" class="cool"/>
+  <text x="545" y="43"  text-anchor="middle" class="lbl">POST /api/estimate</text>
+  <text x="545" y="55"  text-anchor="middle" class="sml">typed JSON request</text>
+
+  <rect x="460" y="100" width="170" height="40" class="box"/>
+  <text x="545" y="123" text-anchor="middle" class="lbl">Pydantic request schema</text>
+  <text x="545" y="135" text-anchor="middle" class="sml">schemas/estimate.py</text>
+
+  <rect x="460" y="180" width="170" height="60" class="warm"/>
+  <text x="545" y="203" text-anchor="middle" class="lbl">Estimate engine.run()</text>
+  <text x="545" y="217" text-anchor="middle" class="sml">14-stage pipeline</text>
+  <text x="545" y="230" text-anchor="middle" class="sml">app/estimate/*</text>
+
+  <rect x="260" y="180" width="170" height="60" class="cool"/>
+  <text x="345" y="203" text-anchor="middle" class="lbl">External + cache</text>
+  <text x="345" y="217" text-anchor="middle" class="sml">Open-Meteo Archive</text>
+  <text x="345" y="230" text-anchor="middle" class="sml">Nominatim · geocoder</text>
+
+  <rect x="60"  y="180" width="170" height="60" class="box"/>
+  <text x="145" y="203" text-anchor="middle" class="lbl">Physical chain</text>
+  <text x="145" y="217" text-anchor="middle" class="sml">Erbs · HDKR · Faiman</text>
+  <text x="145" y="230" text-anchor="middle" class="sml">PVWatts v5 · clipping</text>
+
+  <rect x="60"  y="270" width="170" height="50" class="warm"/>
+  <text x="145" y="290" text-anchor="middle" class="lbl">Metrics + uncertainty</text>
+  <text x="145" y="304" text-anchor="middle" class="sml">annual · monthly · daily · band</text>
+
+  <rect x="260" y="270" width="170" height="50" class="box"/>
+  <text x="345" y="290" text-anchor="middle" class="lbl">Assumption ledger</text>
+  <text x="345" y="304" text-anchor="middle" class="sml">every default recorded</text>
+
+  <rect x="460" y="270" width="170" height="50" class="cool"/>
+  <text x="545" y="290" text-anchor="middle" class="lbl">JSON response</text>
+  <text x="545" y="304" text-anchor="middle" class="sml">generation · finances · assumptions</text>
+
+  <line class="arw" x1="140" y1="40" x2="160" y2="40"/>
+  <line class="arw" x1="290" y1="40" x2="310" y2="40"/>
+  <line class="arw" x1="440" y1="40" x2="460" y2="40"/>
+  <line class="arw" x1="545" y1="60" x2="545" y2="100"/>
+  <line class="arw" x1="545" y1="140" x2="545" y2="180"/>
+  <line class="arw" x1="460" y1="210" x2="430" y2="210"/>
+  <line class="arw" x1="260" y1="210" x2="230" y2="210"/>
+  <line class="arw" x1="145" y1="240" x2="145" y2="270"/>
+  <line class="arw" x1="230" y1="295" x2="260" y2="295"/>
+  <line class="arw" x1="430" y1="295" x2="460" y2="295"/>
+</svg>
+<div class="caption">Figure&nbsp;21.1 &nbsp;&mdash;&nbsp; Data flow for a consumer
+estimate. Every arrow crossing the vertical middle is either a network call (cached) or
+a pure function.</div>
+</div>
+
+<h3>Transition notes</h3>
+<ul class="tight">
+<li><strong>Wizard&nbsp;&rarr;&nbsp;draft:</strong> each field change writes to
+<code>localStorage</code>, so a reload restores position.</li>
+<li><strong>Client validation:</strong> field-level (units, ranges, positivity) with
+rejection messages that state what to type instead.</li>
+<li><strong>Pydantic schema:</strong> strict types + custom validators; failures are
+translated in <code>main.py</code> to human-readable field errors.</li>
+<li><strong>Cache:</strong> the physical chain runs synchronously against the fetched
+DataFrame; the same DataFrame is reused for orientation search &amp; final yield.</li>
+<li><strong>Ledger + response:</strong> every ledger row is a claim about a number in
+the payload and each is addressable by <code>key</code>; the frontend renders the
+ledger directly rather than duplicating strings.</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                        22. RESULTS AND VISUALISATION
+=========================================================================== -->
+<section>
+<h2><span class="section-num">22</span>Results and Visualisation</h2>
+
+<p>
+The result page (<code>frontend/app/(site)/result/</code>,
+<code>components/result/ResultView.tsx</code>) assembles the following cards, each of
+which is either a scalar-with-band, a plot, or a table. Every card is optional &mdash;
+if the input didn't warrant it, the card is not shown.
+</p>
+
+<h3>Cards actually rendered</h3>
+<table>
+<thead>
+<tr><th>Card</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td>Headline</td><td>Annual kWh &plusmn; range · confidence label · location · system size · panel count</td></tr>
+<tr><td>Monthly generation</td><td>12-bar chart with per-month range whiskers reflecting each month's own spread</td></tr>
+<tr><td>Daily profile</td><td>Mean diurnal shape (24 hours, local time)</td></tr>
+<tr><td>Energy balance</td><td>Self-consumed · exported · imported · monthly stack (if demand supplied)</td></tr>
+<tr><td>Solar offset</td><td>% of annual demand covered · self-consumption ratio</td></tr>
+<tr><td>Battery (optional)</td><td>Recommended capacity · basis · dispatch profile</td></tr>
+<tr><td>Financials</td><td>CAPEX · monthly savings · annual savings · payback · ROI · LCOE (currency-aware)</td></tr>
+<tr><td>Emissions</td><td>CO<sub>2</sub> avoided per year and lifetime · plain-language equivalences (cars, trees)</td></tr>
+<tr><td>Farm capability</td><td>Daily pump-hours · water pumped m³ · irrigable ha (best/worst month) &mdash; farm only</td></tr>
+<tr><td>System specification</td><td>Panel model card with all supplied electrical values, for hand-off</td></tr>
+<tr><td>Uncertainty breakdown</td><td>Each component named with its % contribution; how to reduce it</td></tr>
+<tr><td>Assumption ledger</td><td>Every default and user value, editable in place; changes trigger re-run</td></tr>
+<tr><td>Warnings</td><td>Sizer notes, clipping warnings, subsidy caveats, data-completeness notes</td></tr>
+<tr><td>Report</td><td>Download a plain-text professional report (<code>GET /api/estimate/{id}/report</code>)</td></tr>
+</tbody>
+</table>
+
+<h3>Charts</h3>
+<p>
+Every chart is a hand-rolled SVG (no charting library). Two files carry all of it:
+</p>
+<ul class="tight">
+<li><code>components/charts/core.tsx</code> and <code>index.tsx</code> &mdash; primitives
+(axes, gridlines, tooltips) shared with the console.</li>
+<li><code>components/result/charts.tsx</code> &mdash; consumer-specific views (monthly
+bars, diurnal line, energy stack).</li>
+</ul>
+<p>
+The console adds fourteen views (<code>components/views/</code>): Overview, Performance,
+Uncertainty, Validation, Explain, ModelLab, ModelCard, Report, Scenarios, Anomalies,
+DataQuality, Forecast, Literature, Experiments.
+</p>
+</section>
+
+<!-- ==========================================================================
+                    23. UNCERTAINTY AND LIMITATIONS
+=========================================================================== -->
+<section>
+<h2><span class="section-num">23</span>Uncertainty and Limitations</h2>
+
+<h3>Uncertainty band construction</h3>
+<p>
+For the consumer estimate, uncertainty is assembled from four named component
+categories in <code>estimate/uncertainty.py</code>:
+</p>
+<ol>
+<li><strong>Weather variability</strong> &mdash; the standard deviation of the years in
+the record, converted to a relative figure. This is <em>measured</em>; it is usually
+the largest term and it is irreducible.</li>
+<li><strong>Resource-data uncertainty</strong> &mdash; a ~5&nbsp;% order-of-magnitude
+term standing in for the gap between a reanalysis grid cell and a rooftop
+pyranometer.</li>
+<li><strong>Conversion-model uncertainty</strong> &mdash; a ~5&nbsp;% term covering
+the physical chain (Erbs, HDKR, Faiman, PVWatts) applied to correct inputs.</li>
+<li><strong>Assumption components</strong> &mdash; per-question terms that <em>grow</em>
+whenever the user could not answer. Skipping shading level adds a term; skipping
+orientation adds a term; using a bill route with the regional-default tariff adds a
+term.</li>
+</ol>
+<p>
+Components combine in quadrature. The resulting relative <em>&sigma;</em> is applied
+to give an 80&nbsp;% central band under a normal approximation
+(<em>z</em>&nbsp;=&nbsp;1.2816). The 80&nbsp;% nominal is used deliberately: 95&nbsp;% on a
+solar estimate is so wide it stops being decision-useful, and the console's conformal
+intervals use the same 80&nbsp;% so two numbers on two screens mean the same thing.
+</p>
+
+<h3>Confidence rating</h3>
+<p>
+Alongside the band the platform assigns a three-level confidence: <em>high</em>,
+<em>medium</em>, <em>low</em>. It is derived from data completeness, the number of
+complete calendar years in the record, whether shading and orientation were declared,
+and whether the user provided demand. A low rating carries a plain-language
+explanation and a list of the <em>reducible</em> components with instructions for how to
+reduce them ("Add your electricity bill", "Tell us your roof orientation").
+</p>
+
+<h3>Console-side intervals</h3>
+<p>
+Conformalised Quantile Regression, calibrated on a hold-out slice of training data.
+Empirical coverage is reported overall and per weather regime; substantial deviation
+from nominal is surfaced as a warning.
+</p>
+
+<h3>Known limitations</h3>
+<ol>
+<li><strong>Reanalysis, not measurement.</strong> ERA5 grid-cell means differ from
+point observations by amounts that vary with terrain and climate.</li>
+<li><strong>No metered PV output was available.</strong> All PV figures are physically
+modelled from irradiance and <em>not</em> validated against measured generation. The
+interface says so.</li>
+<li><strong>Weather-forecast error not included in intervals.</strong> The intervals
+cover model error given the supplied weather; they exclude error in the weather
+forecast itself, which grows with horizon.</li>
+<li><strong>Trained per location.</strong> No cross-location generalisation of models
+is claimed.</li>
+<li><strong>Marginal, not conditional, coverage.</strong> Conformal PICP is a
+marginal guarantee; it assumes exchangeability that a seasonal series satisfies only
+approximately.</li>
+<li><strong>Missing variables from source.</strong> Aerosol optical depth, sunshine
+duration and wind-direction standard deviation are named in the source research but
+unavailable from the current data source; the interface surfaces this rather than
+silently omitting them.</li>
+<li><strong>Bifacial modelling is simplified.</strong> A rear-side yield adder is used;
+a full view-factor bifacial model is future work.</li>
+<li><strong>Hourly load archetypes.</strong> Six user-type shapes cover the interview,
+but real interval-meter data would beat them and the interface says so.</li>
+<li><strong>Uncertainty components are treated as independent</strong> (quadrature).
+They are not perfectly independent, so the combined figure is a slight understatement,
+stated openly.</li>
+<li><strong>Financial modelling omits</strong> financing/interest, subsidies and
+rebates (they vary by scheme and expire), demand charges on commercial connections,
+and taxes; each is stated in the caveats rather than silently assumed away.</li>
+</ol>
+</section>
+
+<!-- ==========================================================================
+                    24. VALIDATION AND ERROR HANDLING
+=========================================================================== -->
+<section>
+<h2><span class="section-num">24</span>Validation and Error Handling</h2>
+
+<h3>Frontend validation</h3>
+<ul class="tight">
+<li><strong>Field-level types &amp; ranges</strong> (positive numbers, area unit
+sanity, coordinate bounds).</li>
+<li><strong>Rejection messages state what to type instead</strong>, not "invalid"; e.g.
+"Enter a positive number of panels" rather than "value error".</li>
+<li><strong>Never blocks progression on optional fields</strong>; every technical
+question offers an escape route.</li>
+<li><strong>Location step</strong> handles denied GPS permission with a switch to
+search/map without an error dialog.</li>
+</ul>
+
+<h3>Backend validation</h3>
+<ul class="tight">
+<li><strong>Pydantic schemas</strong> in <code>backend/app/schemas/estimate.py</code>
+and <code>schemas/models.py</code> validate every request. Custom validators enforce
+domain rules (positive capacity, tilt in [0, 90], azimuth in [0, 360)).</li>
+<li><strong>Pipeline pre-conditions</strong> in the engine raise <code>ValueError</code>
+with user-facing messages, caught at the route boundary and returned as 422s.</li>
+<li><strong>Physical validation of PVSystem</strong> in
+<code>features/solar_geometry.py::PVSystem.__post_init__</code>.</li>
+<li><strong>Data-quality engine</strong> (<code>quality/engine.py</code>) detects eight
+distinct corruption modes (missing runs, all-zero days, impossible temperatures,
+stalled sensors, wrong-hemisphere daylight, etc.) and scores the record.</li>
+<li><strong>Leakage audit</strong> in the console runs a five-check test (target,
+future information, preprocessing, boundary contamination, trivial observations) and
+reports the mechanism preventing each.</li>
+</ul>
+
+<h3>Error envelope</h3>
+<p>Every error the client sees uses the same shape:</p>
+<pre>{
+  "error": "validation_error",
+  "message": "location: Tell us where the system will be — search…",
+  "remedy": "Correct the highlighted fields and resubmit.",
+  "field_errors": [ { "field": "location", "message": "…", "type": "missing" } ]
+}</pre>
+<p>
+The frontend renders <code>message</code>, <code>remedy</code> and any
+<code>field_errors</code> verbatim &mdash; the backend is where the domain knowledge
+lives, and its wording is preserved rather than substituted with something generic.
+</p>
+
+<h3>Representative failure paths</h3>
+<table>
+<thead><tr><th>Failure</th><th>Behaviour</th></tr></thead>
+<tbody>
+<tr><td>Upstream weather timeout</td><td>502 with remedy; cached results still work.</td></tr>
+<tr><td>Location query has no match</td><td>404 with three concrete remedies.</td></tr>
+<tr><td>User asks for a system in a completely dark polar winter month</td><td>422 with domain message from <code>engine.run()</code>.</td></tr>
+<tr><td>Rate limit exceeded</td><td>429 with <code>Retry-After</code> header and human-readable message.</td></tr>
+<tr><td>Unhandled internal exception</td><td>500 with a request ID; stack trace logged, not returned.</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ==========================================================================
+                                25. SECURITY
+=========================================================================== -->
+<section>
+<h2><span class="section-num">25</span>Security</h2>
+
+<p>
+The platform runs against keyless upstream services and holds no user accounts, so its
+attack surface is narrower than a typical SaaS. Actual measures in place:
+</p>
+
+<ul>
+<li><strong>No secrets required or stored.</strong> No API keys, no OAuth. Environment
+variables carry only configuration (endpoints, cache directory, CORS origin).</li>
+<li><strong>Environment-driven configuration.</strong> <code>backend/app/config.py</code>
+reads all tunables from the environment with safe defaults; secrets, if any were ever
+added, would live only in the environment.</li>
+<li><strong>CORS scoped.</strong> <code>SOLAR_CORS_ORIGINS</code> defines the accepted
+origins; production deployments should set this to the deployed frontend origin only.</li>
+<li><strong>Rate limiting.</strong> Fixed-window per-client in-process limiter in
+<code>main.py</code>. The limits are configurable
+(<code>SOLAR_RATE_LIMIT_REQUESTS</code>, <code>SOLAR_RATE_LIMIT_WINDOW_S</code>). The
+README states clearly that this is not a substitute for a gateway limiter.</li>
+<li><strong>Security headers on every response:</strong>
+<code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy: no-referrer</code>,
+<code>X-Frame-Options: DENY</code>.</li>
+<li><strong>Request ID stamping.</strong> Every response carries an
+<code>X-Request-ID</code> header (also stamped in server logs) for traceability
+without exposing internals.</li>
+<li><strong>Structured error output.</strong> Stack traces are never returned to the
+client; internal errors carry only the request ID.</li>
+<li><strong>Input validation.</strong> Every request goes through Pydantic; custom
+validators enforce domain rules; upstream URLs and parameters are constructed
+server-side.</li>
+<li><strong>Coordinate rounding before reverse-geocoding.</strong> Third parties
+receive lower-precision coordinates than the ones the user supplies.</li>
+<li><strong>Estimate URLs are opaque.</strong> Saved-estimate IDs are unguessable
+tokens; there is no listing endpoint that enumerates other users' estimates.</li>
+<li><strong>Retention sweep at startup.</strong> Old estimates are pruned past a
+configurable window (<code>SOLAR_STORE_ESTIMATE_RETENTION_DAYS</code>).</li>
+</ul>
+
+<h3>Not implemented (deliberately)</h3>
+<ul class="tight">
+<li>No authentication or authorisation &mdash; there are no users.</li>
+<li>No third-party analytics or telemetry.</li>
+<li>No client-side secrets. The frontend never talks to Open-Meteo or Nominatim
+directly.</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                26. PERFORMANCE AND RESPONSIVENESS
+=========================================================================== -->
+<section>
+<h2><span class="section-num">26</span>Performance and Responsiveness</h2>
+
+<h3>Backend performance</h3>
+<ul class="tight">
+<li><strong>Weather cache</strong> &mdash; every Open-Meteo response is cached to disk
+by URL+params SHA-256. Repeat requests avoid the network entirely.</li>
+<li><strong>Single fetch per estimate</strong> &mdash; the orientation search, the
+reference-yield calculation and the final-yield calculation all reuse the same
+in-memory DataFrame.</li>
+<li><strong>Vectorised physics</strong> &mdash; the whole chain runs in NumPy;
+solar-position is computed once for the whole index; no Python loops over hours.</li>
+<li><strong>Latency in practice</strong> &mdash; ~1&nbsp;s for a cached location,
+~15&nbsp;s for a new location (dominated by the Open-Meteo fetch), 10&ndash;40&nbsp;s
+for a full console analysis (train + CV + calibrate + evaluate).</li>
+<li><strong>Response timing header</strong> &mdash; <code>X-Response-Time-ms</code>
+on every response; slow requests (&gt; 5&nbsp;s) are also logged.</li>
+</ul>
+
+<h3>Frontend performance</h3>
+<ul class="tight">
+<li><strong>No charting library</strong> &mdash; SVG charts add ~0 kB of runtime
+dependencies.</li>
+<li><strong>Dynamic Leaflet import</strong> &mdash; the Leaflet swap is dynamically
+loaded, so it is absent from every bundle unless
+<code>NEXT_PUBLIC_MAP_ENGINE=leaflet</code>.</li>
+<li><strong>Server components for the shell</strong> &mdash; the landing page and static
+sections are server-rendered; only interactive components ship JavaScript.</li>
+<li><strong>Draft persistence in localStorage</strong> &mdash; no server round-trip
+for wizard progress.</li>
+<li><strong>Deterministic loading stages</strong> &mdash; user sees real progress
+against real work; no spinner masquerading as motion.</li>
+</ul>
+
+<h3>Responsive rendering</h3>
+<p>
+Tailwind's breakpoints are used throughout with a mobile-first layout in the consumer
+surface. Charts scale with their container. Touch targets on maps and wizard inputs are
+sized to the minimum recommended for touch (44 CSS px). The console surface is
+laptop-and-up (it presents dense tables that do not compress well onto a phone).
+</p>
+</section>
+
+<!-- ==========================================================================
+                    27. ACCESSIBILITY AND USABILITY
+=========================================================================== -->
+<section>
+<h2><span class="section-num">27</span>Accessibility and Usability</h2>
+
+<ul>
+<li><strong>Responsive design</strong> throughout the consumer surface, mobile-first.</li>
+<li><strong>Readable typography</strong> &mdash; Inter and system fallbacks; body
+copy at ~16 CSS&nbsp;px on mobile; consistent 1.55 line-height in results.</li>
+<li><strong>Semantic HTML</strong> &mdash; native <code>&lt;form&gt;</code>,
+<code>&lt;fieldset&gt;</code>, <code>&lt;legend&gt;</code>, <code>&lt;label&gt;</code>
+usage for wizard steps.</li>
+<li><strong>Keyboard support</strong> &mdash; all interactive elements are native
+inputs, buttons or links; no custom widgets that swallow focus.</li>
+<li><strong>Skip-to-main link</strong> and a single visible <code>id="main"</code>
+landmark in the layout.</li>
+<li><strong>Beginner-friendly wording</strong> &mdash; the interview never asks the
+user to know what a kilowatt-peak is; every question comes with plain help text; every
+technical option offers "I don't know".</li>
+<li><strong>Progressive disclosure</strong> &mdash; Detailed mode reveals technical
+inputs only after the user has asked for them.</li>
+<li><strong>Tooltips</strong> attached to jargon at first use (e.g. tilt, azimuth, PR).</li>
+<li><strong>Localisation scaffold</strong> &mdash; interview strings live in
+<code>personas.py</code>; frontend strings pass through <code>lib/i18n.ts</code>.
+Currency and units switch by country.</li>
+</ul>
+
+<div class="callout">
+<span class="label">Not verified in the current implementation:</span> a formal WCAG
+2.1 AA audit has not been performed on this build. Contrast tokens meet the criterion,
+but assistive-technology testing (screen readers, high-contrast mode, forced-colours
+mode) has not been recorded as a passing test.
+</div>
+</section>
+
+<!-- ==========================================================================
+                                28. TESTING
+=========================================================================== -->
+<section>
+<h2><span class="section-num">28</span>Testing</h2>
+
+<h3>Backend tests (pytest)</h3>
+<p>
+Approximately 223+ tests across five test modules; representative composition:
+</p>
+<table>
+<thead>
+<tr><th>File</th><th>Approx. count</th><th>Coverage</th></tr>
+</thead>
+<tbody>
+<tr><td><code>test_solar_geometry.py</code></td><td>~35</td><td>NOAA solar position vs known astronomical values; Erbs; HDKR; Faiman; PVWatts DC; clipping.</td></tr>
+<tr><td><code>test_evaluation.py</code></td><td>~31</td><td>Metrics, splitters (chronological, rolling origin with embargo), baselines, leakage detection.</td></tr>
+<tr><td><code>test_quality_and_features.py</code></td><td>~24</td><td>Eight corruption types, feature-pipeline leakage guards, day-mask behaviour, interval-offset correction.</td></tr>
+<tr><td><code>test_api.py</code></td><td>~22</td><td>Endpoint contracts, error envelopes, rate-limit response shape, request validation.</td></tr>
+<tr><td><code>test_estimate.py</code></td><td>~125 (classes with many nested tests)</td><td>Consumer domain: energy ledger balance, losses combined multiplicatively (not additively), battery does not return more than it stored, bill-to-kWh removes fixed charge, currency symbol matches figure currency, orientation search picks a defensible pair, panel-count wins over sizer target.</td></tr>
+</tbody>
+</table>
+
+<h3>Frontend tests (Vitest)</h3>
+<ul class="tight">
+<li>Web-Mercator projection round-trip (<code>frontend/tests/logic.test.ts</code>).</li>
+<li>Polygon-area calculation (shoelace on projected coordinates).</li>
+<li>Draft-to-request mapping preserves user intent.</li>
+<li>Component promises: a rejected field says what to type instead; every technical
+question can be declined; denied location permission offers a way forward; a loading
+stage is never shown as finished before it is.</li>
+</ul>
+
+<h3>What is not automated</h3>
+<div class="callout">
+<span class="label">Not verified in the current implementation:</span> end-to-end
+Playwright / Cypress tests are not part of the suite; visual regression testing is not
+part of the suite; formal accessibility conformance testing is not automated. These are
+listed as future work.
+</div>
+
+<h3>Running the tests</h3>
+<pre>cd backend
+python -m pytest
+
+cd frontend
+npm run typecheck && npm test && npm run build</pre>
+</section>
+
+<!-- ==========================================================================
+                                29. DEPLOYMENT
+=========================================================================== -->
+<section>
+<h2><span class="section-num">29</span>Deployment</h2>
+
+<h3>Local development</h3>
+<pre>cd backend
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --port 8000
+
+cd frontend
+npm install
+npm run dev</pre>
+<p>
+The frontend expects the backend at <code>http://127.0.0.1:8000</code>; this is set in
+<code>frontend/.env.local</code>, which ships with the repository.
+</p>
+
+<h3>Production</h3>
+<h4>Backend</h4>
+<pre>python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4</pre>
+
+<h4>Frontend</h4>
+<pre>npm run build
+npm start        # serves on :3000</pre>
+
+<h4>Real-deployment notes (from the README)</h4>
+<ul class="tight">
+<li>The in-process rate limiter is per-worker &mdash; a gateway limiter is expected
+in front.</li>
+<li>The analysis cache and experiment store are per-process, on local disk. Multi-node
+deployment needs shared storage (e.g. NFS or an object store) if any state must be
+seen across nodes.</li>
+<li>Set <code>SOLAR_CORS_ORIGINS</code> to the deployed frontend origin only.</li>
+<li>Training is CPU-bound and synchronous. Worker sizing should account for
+concurrency; heavy console usage benefits from moving training onto a task queue.</li>
+</ul>
+
+<h3>External services required at runtime</h3>
+<ul class="tight">
+<li>Open-Meteo Archive API &mdash; historical weather (keyless).</li>
+<li>Open-Meteo Geocoding API &mdash; place search (keyless).</li>
+<li>OpenStreetMap Nominatim &mdash; reverse geocoding (keyless; be mindful of their
+usage policy in production).</li>
+<li>Open-Meteo Forecast API &mdash; used by the console's Forecast view (keyless).</li>
+</ul>
+
+<h3>Environment variables (selected)</h3>
+<table>
+<thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>SOLAR_ARCHIVE_URL</code></td><td>archive-api.open-meteo.com/v1/archive</td><td>Historical weather endpoint.</td></tr>
+<tr><td><code>SOLAR_FORECAST_URL</code></td><td>api.open-meteo.com/v1/forecast</td><td>Forecast endpoint.</td></tr>
+<tr><td><code>SOLAR_CACHE_DIR</code></td><td><code>backend/var/cache</code></td><td>Disk cache directory.</td></tr>
+<tr><td><code>SOLAR_CACHE_TTL</code></td><td>configured</td><td>Cache lifetime in seconds.</td></tr>
+<tr><td><code>SOLAR_CORS_ORIGINS</code></td><td>localhost origins</td><td>Comma-separated allowed frontend origins.</td></tr>
+<tr><td><code>SOLAR_RATE_LIMIT_REQUESTS</code></td><td>configured</td><td>Max requests per client per window.</td></tr>
+<tr><td><code>SOLAR_RATE_LIMIT_WINDOW_S</code></td><td>configured</td><td>Rate-limit window in seconds.</td></tr>
+<tr><td><code>SOLAR_STORE_ESTIMATE_RETENTION_DAYS</code></td><td>configured (long)</td><td>Prune saved estimates older than this at startup.</td></tr>
+<tr><td><code>NEXT_PUBLIC_API_BASE</code></td><td>http://127.0.0.1:8000</td><td>Frontend&rarr;backend base URL.</td></tr>
+<tr><td><code>NEXT_PUBLIC_MAP_ENGINE</code></td><td>(built-in)</td><td>Set to <code>leaflet</code> to swap the map adapter.</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ==========================================================================
+                    30. INSTALLATION AND RUNNING
+=========================================================================== -->
+<section>
+<h2><span class="section-num">30</span>Installation and Running the Project</h2>
+
+<ol>
+<li><strong>Install prerequisites.</strong> Python 3.11+ and Node.js 20+.</li>
+<li><strong>Clone or open the project.</strong>
+<pre>cd C:\Projects_AI\college_project</pre></li>
+<li><strong>Install backend dependencies.</strong>
+<pre>cd backend
+python -m pip install -r requirements.txt</pre></li>
+<li><strong>Install frontend dependencies.</strong>
+<pre>cd ..\frontend
+npm install</pre></li>
+<li><strong>Configure environment (usually not needed).</strong>
+<code>frontend/.env.local</code> ships with the repository. If missing:
+<pre>copy .env.example .env.local      # Windows
+cp   .env.example .env.local      # macOS / Linux</pre>
+No secrets are required.</li>
+<li><strong>Start the backend.</strong>
+<pre>cd ..\backend
+python -m uvicorn app.main:app --reload --port 8000</pre>
+API docs: <code>http://localhost:8000/api/docs</code></li>
+<li><strong>Start the frontend.</strong>
+<pre>cd ..\frontend
+npm run dev</pre>
+Application: <code>http://localhost:3000</code></li>
+<li><strong>Optional: run the tests.</strong>
+<pre>cd ..\backend
+python -m pytest
+
+cd ..\frontend
+npm run typecheck &amp;&amp; npm test &amp;&amp; npm run build</pre></li>
+</ol>
+</section>
+
+<!-- ==========================================================================
+                          31. FUTURE IMPROVEMENTS
+=========================================================================== -->
+<section>
+<h2><span class="section-num">31</span>Future Improvements</h2>
+
+<p>
+The following are logical next steps that build on the current implementation. Each is
+labelled as <strong>future work</strong>, not existing functionality. The console's own
+model registry declares its own future-work list in <code>models/registry.py</code>,
+included below.
+</p>
+
+<h3>Product</h3>
+<ul>
+<li>Additional languages (Telugu, Tamil, Hindi) via the existing
+<code>i18n.ts</code>/<code>personas.py</code> scaffold.</li>
+<li>Voice-driven interview using the spoken-form synonyms already declared per
+question and per user type.</li>
+<li>Interval-meter CSV upload as a first-class consumption route, replacing the hourly
+archetype.</li>
+<li>Multi-tariff support (time-of-use, tiered, seasonal).</li>
+<li>Native Marion / view-factor bifacial radiation model.</li>
+<li>Real-time monitoring integration (Enphase, SolarEdge, IoT inverter API) to update
+a saved estimate with measured generation.</li>
+<li>Satellite-imagery-based shading analysis for a dropped map polygon.</li>
+</ul>
+
+<h3>Data</h3>
+<ul>
+<li>Fetch aerosol optical depth, sunshine duration and wind-direction variability
+from a source that supplies them (e.g. CAMS or a ground station), and feed them into
+the ML path.</li>
+<li>Ground-truth validation against a pyranometer network for at least one region,
+lifting the "PV modelled, not measured" caveat.</li>
+</ul>
+
+<h3>Modelling</h3>
+<ul>
+<li><strong>LSTM / BiLSTM / BiGRU sequence models</strong> (per Hayajneh et al. [P6])
+&mdash; requires a deep-learning runtime and reframing to sequence forecasting.</li>
+<li><strong>Full copula-based dynamic feature selection</strong> (per Lyu &amp;
+Eftekharnejad [P3]) &mdash; currently only the regime-conditioning is implemented.</li>
+<li><strong>TinyML edge deployment</strong> (per Hayajneh et al. [P6]) &mdash; out of
+scope for a server-side platform; no claim is made about edge feasibility here.</li>
+<li><strong>pvlib / Perez-Driesse transposition</strong> (per Hobbs &amp; Joshi [P1])
+&mdash; currently substituted with HDKR.</li>
+<li>Advanced uncertainty: conditional (rather than marginal) coverage; horizon-aware
+conformal intervals.</li>
+<li>Cross-location generalisation and transfer learning.</li>
+</ul>
+
+<h3>Financial &amp; battery</h3>
+<ul>
+<li>Financing / interest / tax treatment.</li>
+<li>Country-specific rebate and subsidy schemes with expiry handling.</li>
+<li>Battery aging (calendar + cycle) with round-trip degradation.</li>
+<li>Time-of-use arbitrage optimisation for battery dispatch.</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                                32. CONCLUSION
+=========================================================================== -->
+<section>
+<h2><span class="section-num">32</span>Conclusion</h2>
+
+<p>
+Helios pairs a rigorous physical solar model with a genuinely usable consumer surface,
+without diluting either. It answers the practical question a homeowner, farmer, business
+or facility manager actually has &mdash; how much energy will this generate, what does
+it save, and how confident can I be &mdash; using the actual weather record at the
+supplied coordinates rather than a national average, and returns the answer with an
+honest uncertainty band built from measured components. It also carries a full research
+console: ten scikit-learn model families, time-aware validation with a leakage audit,
+conformal prediction intervals, and reproducible experiment records.
+</p>
+
+<p>
+The technical significance of the project is not any single algorithm &mdash; the
+physical chain is textbook (Erbs, HDKR, Faiman, PVWatts) and the estimators are
+scikit-learn. It is that <em>every number the interface shows can be traced back to an
+input</em>, <em>every default is on the table for the user to override</em>, and
+<em>nothing modelled is ever presented as measured</em>. Those three constraints
+produced the specific architectural choices documented above &mdash; the assumption
+ledger, the ban on target-lag features, the panel-count-wins rule, the empirically
+determined interval offset, the conformal calibration of prediction intervals, the
+comparison endpoint that refuses to rank incomparable runs.
+</p>
+
+<p>
+Practically, the platform runs on a laptop with no API keys, produces an answer in a
+few seconds, and ships with 270+ automated tests, an ASGI-ready backend and a Next.js
+frontend that can be deployed behind any reverse proxy. Its future potential lies in
+adding real-time monitoring, ground-truth validation, additional languages, and the
+sequence-model class explicitly declared as future work in the model registry.
+</p>
+</section>
+
+<!-- ==========================================================================
+                                33. GLOSSARY
+=========================================================================== -->
+<section>
+<h2><span class="section-num">33</span>Glossary</h2>
+
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>PV</td><td>Photovoltaic &mdash; direct conversion of sunlight to electricity.</td></tr>
+<tr><td>kW / kWh</td><td>Kilowatt (power, instantaneous) / kilowatt-hour (energy, integral).</td></tr>
+<tr><td>kWp</td><td>Kilowatt-peak &mdash; DC rating of a panel or system at standard test conditions.</td></tr>
+<tr><td>DC / AC</td><td>Direct current (from panels) / alternating current (grid). The inverter converts DC to AC.</td></tr>
+<tr><td>DC/AC ratio</td><td>Ratio of installed DC capacity to inverter AC capacity. Ratios &gt; 1 trade a small amount of clipping for better winter/morning performance.</td></tr>
+<tr><td>GHI</td><td>Global Horizontal Irradiance &mdash; total solar flux on a horizontal surface (W/m²).</td></tr>
+<tr><td>DNI</td><td>Direct Normal Irradiance &mdash; beam flux on a surface normal to the sun.</td></tr>
+<tr><td>DHI</td><td>Diffuse Horizontal Irradiance &mdash; sky-scattered flux on a horizontal surface.</td></tr>
+<tr><td>POA</td><td>Plane-of-Array irradiance &mdash; total flux reaching the tilted panel plane.</td></tr>
+<tr><td>AOI</td><td>Angle of Incidence &mdash; angle between the sunbeam and the panel normal.</td></tr>
+<tr><td>P<sub>max</sub></td><td>Panel maximum-power-point rating in watts.</td></tr>
+<tr><td>V<sub>oc</sub>, I<sub>sc</sub></td><td>Open-circuit voltage, short-circuit current at STC.</td></tr>
+<tr><td>V<sub>mp</sub>, I<sub>mp</sub></td><td>Voltage / current at the maximum-power point at STC.</td></tr>
+<tr><td>PR</td><td>Performance Ratio &mdash; actual AC energy divided by (POA · rated capacity), a dimensionless efficiency of the whole system.</td></tr>
+<tr><td>Capacity factor</td><td>Annual energy divided by (rated capacity · 8760), the average utilisation.</td></tr>
+<tr><td>Specific yield</td><td>Annual kWh per kWp; a location-and-orientation-specific figure.</td></tr>
+<tr><td>Clear-sky index (k<sub>t</sub>)</td><td>Ratio of observed to clear-sky irradiance; used as the ML target.</td></tr>
+<tr><td>Bifacial</td><td>Panel producing from both faces; rear-side gain depends on albedo.</td></tr>
+<tr><td>TOPCon / HJT</td><td>Advanced silicon cell architectures with improved efficiency and temperature coefficient.</td></tr>
+<tr><td>Degradation</td><td>Annual reduction in output as panels age (default 0.5&nbsp;%/yr).</td></tr>
+<tr><td>LCOE</td><td>Levelised Cost of Energy &mdash; lifetime cost divided by lifetime generation (currency per kWh).</td></tr>
+<tr><td>PICP / PINAW / CRPS</td><td>Prediction Interval Coverage Probability, Prediction Interval Normalised Average Width, Continuous Ranked Probability Score.</td></tr>
+<tr><td>Conformal prediction</td><td>Distribution-free interval calibration; gives finite-sample marginal-coverage guarantees.</td></tr>
+<tr><td>Reanalysis (ERA5)</td><td>Retrospective global weather record produced by assimilating observations into a physical model on a grid.</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ==========================================================================
+                                34. REFERENCES
+=========================================================================== -->
+<section>
+<h2><span class="section-num">34</span>References</h2>
+
+<h3>Papers cited by the platform</h3>
+<ol class="tight">
+<li>[P1] Hobbs, W. &amp; Joshi, S., <em>"An operational hybrid framework for hour-ahead solar irradiance forecasting"</em> (referenced throughout as the source of the clear-sky-index target, Erbs decomposition and Faiman cell temperature).</li>
+<li>[P2] Mabodi, T. &amp; Hammujuddy, Y., <em>"Machine-learning models for monthly global horizontal irradiance"</em> (source of the KNN and RF hyperparameter defaults).</li>
+<li>[P3] Lyu, C. &amp; Eftekharnejad, S., <em>"Copula-based feature selection for solar-power forecasting"</em> (source of the 87&deg; zenith day-mask threshold and the weather-regime conditioning).</li>
+<li>[P4] Rosales Huamani, J. et al., <em>"Stacked-ensemble regression for solar irradiance"</em> (source of the stacking-ensemble combination).</li>
+<li>[P5] Vijay Babu, R. et al., <em>"Feature importance for solar-power forecasting"</em> (source of the Gradient Boosting hyperparameters and the AOI permutation-importance finding).</li>
+<li>[P6] Hayajneh, A. et al., <em>"LSTM-based short-term irradiance forecasting on ESP32"</em> (listed as future work &mdash; sequence models and TinyML edge deployment).</li>
+</ol>
+
+<h3>Standards, methods and data sources</h3>
+<ul class="tight">
+<li>Dobos, A. P. (2014). <em>PVWatts Version 5 Manual.</em> NREL/TP-6A20-62641.</li>
+<li>Faiman, D. (2008). <em>Assessing the outdoor operating temperature of photovoltaic modules.</em> Progress in Photovoltaics.</li>
+<li>Erbs, D. G., Klein, S. A. &amp; Duffie, J. A. (1982). <em>Estimation of the diffuse radiation fraction for hourly, daily and monthly-average global radiation.</em> Solar Energy.</li>
+<li>Haurwitz, B. (1945). <em>Insolation in relation to cloudiness and cloud density.</em> J. Meteorol.</li>
+<li>Michalsky, J. J. (1988). <em>The astronomical almanac's algorithm for approximate solar position.</em> Solar Energy. (NOAA Solar Calculator formulation.)</li>
+<li>Kopp, G. &amp; Lean, J. L. (2011). <em>A new, lower value of total solar irradiance: Evidence and climate significance.</em> Geophysical Research Letters. (Solar constant 1361 W/m<sup>2</sup>.)</li>
+<li>Hersbach, H. et al. (2020). <em>The ERA5 global reanalysis.</em> Q. J. R. Meteorol. Soc.</li>
+</ul>
+
+<h3>Services and libraries</h3>
+<ul class="tight">
+<li>Open-Meteo Historical Weather API &mdash; <code>open-meteo.com</code> (CC-BY 4.0).</li>
+<li>Open-Meteo Geocoding API &mdash; GeoNames (CC-BY 4.0).</li>
+<li>OpenStreetMap Nominatim &mdash; ODbL / usage policy.</li>
+<li>FastAPI &mdash; <code>fastapi.tiangolo.com</code>.</li>
+<li>Next.js &mdash; <code>nextjs.org</code>.</li>
+<li>scikit-learn &mdash; Pedregosa et al., JMLR 2011.</li>
+<li>Pandas &mdash; McKinney, W., PyData 2010.</li>
+<li>NumPy &mdash; Harris, C. R. et al., Nature 2020.</li>
+</ul>
+</section>
+
+<!-- ==========================================================================
+                    35. APPENDIX
+=========================================================================== -->
+<section>
+<h2><span class="section-num">35</span>Appendix &mdash; API and Configuration</h2>
+
+<h3>Consumer estimate endpoints</h3>
+<table>
+<thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td><code>/api/meta/interview</code></td><td>The interview as data (personas + questions).</td></tr>
+<tr><td>GET</td><td><code>/api/meta/place_search?q=</code></td><td>Place-name search.</td></tr>
+<tr><td>GET</td><td><code>/api/locations/reverse?latitude=&amp;longitude=</code></td><td>Reverse-geocode a coordinate.</td></tr>
+<tr><td>POST</td><td><code>/api/estimate</code></td><td>Create an estimate (optionally save).</td></tr>
+<tr><td>GET</td><td><code>/api/estimate/{id}</code></td><td>Read a saved estimate.</td></tr>
+<tr><td>POST</td><td><code>/api/estimate/{id}/update</code></td><td>Edit assumptions and re-run.</td></tr>
+<tr><td>POST</td><td><code>/api/estimate/{id}/rename</code></td><td>Rename a saved estimate.</td></tr>
+<tr><td>DELETE</td><td><code>/api/estimate/{id}</code></td><td>Delete a saved estimate.</td></tr>
+<tr><td>GET</td><td><code>/api/estimates?limit=</code></td><td>Recent estimates on this server.</td></tr>
+<tr><td>GET</td><td><code>/api/estimate/{id}/report</code></td><td>Plain-text professional report.</td></tr>
+<tr><td>POST</td><td><code>/api/estimate/compare</code></td><td>Run multiple scenarios in one call.</td></tr>
+</tbody>
+</table>
+
+<h3>Analysis-console endpoints (research surface)</h3>
+<table>
+<thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td><code>/api/analysis</code></td><td>Create an analysis (fetch, quality, features, train, evaluate).</td></tr>
+<tr><td>GET</td><td><code>/api/analysis/{id}</code></td><td>Summary of the analysis.</td></tr>
+<tr><td>GET</td><td><code>/api/analysis/{id}/quality</code></td><td>Data-quality report (eight corruption detectors).</td></tr>
+<tr><td>GET</td><td><code>/api/analysis/{id}/predictions</code></td><td>Actual-vs-predicted series for the test set.</td></tr>
+<tr><td>GET</td><td><code>/api/analysis/{id}/performance</code></td><td>Metrics, folds, baselines, error decompositions, intervals.</td></tr>
+<tr><td>GET</td><td><code>/api/analysis/{id}/explain</code></td><td>Permutation importance, partial dependence.</td></tr>
+<tr><td>GET</td><td><code>/api/analysis/{id}/anomalies</code></td><td>Physical / residual / ramp / drift detectors.</td></tr>
+<tr><td>POST</td><td><code>/api/analysis/{id}/forecast</code></td><td>Short-horizon forward forecast.</td></tr>
+<tr><td>POST</td><td><code>/api/analysis/{id}/scenarios</code></td><td>Counterfactual analysis with pathway decomposition.</td></tr>
+<tr><td>GET</td><td><code>/api/analysis/{id}/report</code></td><td>Markdown research report.</td></tr>
+<tr><td>GET</td><td><code>/api/experiments</code></td><td>List persisted experiments.</td></tr>
+<tr><td>POST</td><td><code>/api/experiments/compare</code></td><td>Compare comparable experiments; refuses incomparable ones.</td></tr>
+</tbody>
+</table>
+
+<h3>Sample estimate request (abridged)</h3>
+<pre>{
+  "user_type": "farm",
+  "mode": "quick",
+  "goal": "install",
+  "location": { "query": "Warangal, India" },
+  "consumption_method": "equipment",
+  "equipment": [
+    { "key": "led_light",   "count": 20, "hours_per_day": 5 },
+    { "key": "ceiling_fan", "count":  8, "hours_per_day": 8 }
+  ],
+  "pumps": [
+    { "horsepower": 5, "head_metres": 22, "hours_per_day": 6 }
+  ],
+  "area":   { "value": 800, "unit": "sqm" },
+  "system": { "panel_key": "mono_perc" },
+  "farm":   { "pump_horsepower": 5, "pump_head_metres": 22 },
+  "save":   true,
+  "label":  "Warangal 5HP pump"
+}</pre>
+
+<h3>Sample response shape (abridged)</h3>
+<pre>{
+  "estimate_id": "e_9x7…",
+  "saved": true,
+  "location": { "label": "Warangal, Telangana, India", "latitude": 17.98, "longitude": 79.6, "timezone": "Asia/Kolkata" },
+  "currency": { "code": "INR", "symbol": "₹" },
+  "system": {
+    "capacity_kwp": 6.60,
+    "panels": { "count": 12, "watts": 550, "model": null },
+    "orientation": { "tilt_deg": 22.3, "azimuth_deg": 180, "method": "searched" },
+    "inverter": { "ac_capacity_kw": 5.5, "verdict": "…", "severity": "info" },
+    "sizing": { "binding_constraint": "demand", "reason": "…" }
+  },
+  "generation": {
+    "annual_kwh": 10230,
+    "monthly_kwh": [ …12 values… ],
+    "monthly_ranges": [ …12 (low,high) pairs from that month's own variability… ],
+    "daily_profile_kwh": [ …24 values… ],
+    "specific_yield_kwh_per_kwp": 1550,
+    "capacity_factor": 0.177,
+    "clipped_fraction": 0.006
+  },
+  "balance":  { "self_consumption_pct": 63, "solar_offset_pct": 78, "annual_import_kwh": …, "annual_export_kwh": … },
+  "economics":{ "total_capex": 396000, "annual_savings_year1": 62000, "payback_years": 6.3, "roi_pct": 214, "lcoe_per_kwh": 3.1 },
+  "emissions":{ "co2_avoided_tonnes_per_year": 7.4, "equivalences": { "cars_off_road": 1.6, "trees_planted": 340 } },
+  "uncertainty":{ "expected": 10230, "lower": 9200, "upper": 11300, "confidence": "medium", "factors": [ … ] },
+  "farm":     { "daily_pump_hours_typical": 5.8, "daily_water_m3": 218, "irrigable_ha": 1.4 },
+  "assumptions": [ …ledger rows, editable=True where applicable… ],
+  "warnings":  [],
+  "data_sources": [ …provenance metadata… ]
+}</pre>
+
+<h3>Configuration reference</h3>
+<p>See <code>backend/app/config.py</code> for the full dataclass structure. All settings
+are environment-variable driven with safe defaults; nothing here is secret.</p>
+
+<hr>
+<p style="font-size: 9pt; color: #55606f; text-align: center; margin-top: 20px;">
+End of document. &nbsp;&mdash;&nbsp; Solar Energy Prediction and Analysis Platform,
+project documentation, compiled 2026-08-21.
+</p>
+</section>
+
+</body>
+</html>

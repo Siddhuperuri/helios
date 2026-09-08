@@ -1,0 +1,26 @@
+# Anything that would make the build context large, non-reproducible, or leaky.
+
+__pycache__
+*.py[cod]
+.venv
+venv
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Runtime state. `var` holds the local cache fallback tier and, before the migration, the
+# file-backed estimate store. Neither belongs in an image: the container creates its own.
+var
+
+# Real environment files never enter an image.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+Dockerfile
+.dockerignore
+*.log
+tests
+requirements-dev.txt

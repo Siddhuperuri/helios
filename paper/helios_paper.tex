@@ -1,0 +1,724 @@
+%% =====================================================================
+%% Methodological Pitfalls in Machine-Learning Solar Forecasting
+%% IEEE conference format (IEEEtran). Compiles on Overleaf as-is:
+%%   New Project -> Upload Project -> select this .tex -> compile with pdfLaTeX.
+%%
+%% BEFORE SUBMISSION:
+%%   - Fill in the affiliation/department/city placeholders in \author.
+%%   - Re-run the experiments and confirm every number in Section V.
+%%   - Verify page numbers and DOIs in the bibliography against the
+%%     publisher's record.
+%% =====================================================================
+
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{balance}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Quantifying Three Evaluation Pitfalls in\\
+Machine-Learning Solar Forecasting:\\
+Split Optimism, Interval-Label Phase Error,\\
+and Prediction-Interval Miscalibration}
+
+\author{
+\IEEEauthorblockN{
+T.~Harshini~Sowmya,
+M.~Lavanya~Durga,
+P.~J.~S.~Siddhartha,\\
+M.~Ajay~Prakash,
+P.~Maruthi~Sreeram,
+and~K.~Surya~Prakash}
+\IEEEauthorblockA{
+\textit{Department of Computer Science and Engineering}\\
+\textit{\textless Institution Name\textgreater}\\
+\textless City\textgreater, India\\
+Team CSE-D\_13}
+}
+
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+Machine-learning solar forecasting is routinely reported with
+coefficients of determination above~0.9, yet several widely used
+evaluation practices inflate those figures in ways that are invisible
+in the published result. We reconcile six recent solar-forecasting
+studies into a single reproducible platform and use it to quantify
+three such effects on identical data, models and random seeds. First,
+random train/test splitting of an autocorrelated hourly series
+understates RMSE by 11.6\,\% (74.68 to 66.03~W/m\textsuperscript{2}) and
+overstates $R^{2}$ by 0.027 relative to a chronological split---the
+comparison that one of the reconciled studies explicitly names as
+future work. Second, we determine empirically that hourly reanalysis
+irradiance is labelled at the \emph{end} of its averaging interval;
+evaluating solar position at the raw label rather than the interval
+midpoint introduces a systematic phase error yielding 264 spurious
+clear-sky exceedances per year, and correcting it raises our
+data-quality score from 97.7\,\% to 99.9\,\%. Third, uncalibrated
+quantile gradient boosting attains only 66.3\,\% empirical coverage for
+a nominal 80\,\% prediction interval; conformalized quantile regression
+restores coverage to 80.2\,\% and to within two points in every weather
+regime. We additionally show that permutation feature importance is
+contingent on target choice, which reconciles two apparently
+contradictory published importance rankings, and that a scenario
+response can conceal two large opposing pathways that nearly cancel.
+None of these findings requires metered plant output: each is a
+controlled comparison in which only the disputed methodological choice
+varies. We argue that reporting them should be routine, and release the
+platform and its reproducibility manifest to make doing so
+inexpensive.
+\end{abstract}
+
+\begin{IEEEkeywords}
+solar irradiance forecasting, photovoltaic systems, ensemble learning,
+time-series cross-validation, conformal prediction, reproducibility,
+ERA5 reanalysis
+\end{IEEEkeywords}
+
+% =====================================================================
+\section{Introduction}
+
+Solar generation is variable on every timescale that matters to an
+operator, and the machine-learning literature addressing that
+variability has grown quickly. Recent studies report strong
+goodness-of-fit: $R^{2}$ near or above~0.9 is common, and ensemble
+methods---random forests, boosted trees, and stacked
+combinations---are consistently among the best performers
+\cite{P2,P4,P5}.
+
+The difficulty is that a headline $R^{2}$ is a function not only of the
+model but of a set of evaluation choices that are frequently made in
+passing and reported in a single clause. Whether night hours are
+retained, whether the split respects chronology, whether the target was
+statistically truncated, and whether a stated prediction interval
+actually covers what it claims are all decisions that move the reported
+number substantially. Because they are rarely varied within a single
+study, their magnitude is difficult for a reader to judge.
+
+This paper takes six recent solar-forecasting studies
+\cite{P1,P2,P3,P4,P5,P6}, implements their common methodological core
+in one platform, and then uses that platform to hold everything
+constant except one disputed choice at a time. The result is a set of
+effect sizes rather than a set of recommendations.
+
+\subsection{Contributions}
+
+\begin{enumerate}
+  \item \textbf{Split optimism, measured.} With identical model, seed
+    and data, random hour-level splitting understates RMSE by
+    11.6\,\% and overstates $R^{2}$ by $+0.027$ against a chronological
+    split. Blocked random splitting by whole days recovers about half
+    the gap (Section~\ref{sec:f2}).
+
+  \item \textbf{The interval-label convention, determined
+    empirically.} Reanalysis irradiance is an interval average while
+    solar position is instantaneous. We sweep candidate offsets over a
+    full year and show the representative instant lies 30~minutes
+    \emph{before} the label, eliminating clear-sky exceedances entirely
+    (Section~\ref{sec:f1}). We are not aware of this convention being
+    established by measurement elsewhere in the applied
+    solar-ML literature, and a defect it exposed in our own code is
+    reported alongside it.
+
+  \item \textbf{Interval miscalibration, measured and corrected.}
+    A nominal 80\,\% interval from plain quantile gradient boosting
+    covered 66.3\,\% of observations. Conformalized quantile regression
+    \cite{romano2019} restores 80.2\,\% coverage overall and holds
+    within two points across clear, cloudy and precipitation regimes
+    (Section~\ref{sec:f3}).
+
+  \item \textbf{Target-dependent feature importance.} Grouped
+    permutation importance ranks solar geometry third when the target
+    is the clear-sky index but dominant when the target is raw power,
+    which reconciles \cite{P5} with \cite{P2} rather than adjudicating
+    between them (Section~\ref{sec:f4}).
+
+  \item \textbf{A reproducible platform.} All comparisons run from one
+    codebase against a keyless public data source, with a
+    reproducibility manifest, so a reader can repeat them on their own
+    coordinates.
+\end{enumerate}
+
+A deliberate non-contribution: we make \emph{no} claim of
+state-of-the-art forecast accuracy. Section~\ref{sec:limits} states why
+our setup cannot support one, and why the contributions above do not
+require it.
+
+% =====================================================================
+\section{Related Work}
+
+\subsection{Targets and models}
+
+The six reconciled studies do not share a prediction target. Four
+predict irradiance---global horizontal irradiance (GHI) in
+W/m\textsuperscript{2} \cite{P2,P3,P4}, or global solar radiation
+\cite{P4}---while the remainder predict PV power directly
+\cite{P1,P5,P6}. The two are related by a deterministic physical chain
+once array geometry and rating are declared \cite{P1}.
+
+We adopt GHI as the primary scientific target, because it is the
+quantity actually measured and its meaning does not depend on an
+installation, and treat PV energy as a derived engineering output
+obtained through an explicit, user-visible system model. Reporting
+``kWh'' without a declared array size, tilt and period is not a
+well-posed target, and we regard the separation as a correction rather
+than a preference.
+
+On models, the corpus converges on tree ensembles. Random forests
+\cite{breiman2001} appear in \cite{P2,P4,P5}; boosted trees in
+\cite{P2,P3,P4,P5}; and stacking \cite{wolpert1992} is the best overall
+performer in \cite{P4}. Deep sequence models are explored in
+\cite{P6}. We retain four estimators---random forest, histogram
+gradient boosting \cite{ke2017}, extremely randomised trees
+\cite{geurts2006}, and ridge regression \cite{hoerl1970} as a
+deliberate linear floor---together with a stacked combination of the
+four using a ridge meta-learner. Second representatives of a family
+already present were withdrawn: a longer comparison table is not a
+stronger result.
+
+\subsection{Evaluation practice}
+
+Our concern is with the evaluation layer, where the corpus is less
+uniform.
+
+\textbf{Splitting.} \cite{P2} uses a random split and describes it as
+preventing leakage. For an autocorrelated series this places
+observations minutes apart on both sides of the boundary. \cite{P5} is
+explicit that its ``validation was performed using random sampling''
+and names time-based splitting as future work. Section~\ref{sec:f2}
+supplies that measurement.
+
+\textbf{Target truncation.} \cite{P4} applies interquartile-range
+outlier bounds of 165--331~W/m\textsuperscript{2} to solar radiation
+and removes 10.16\,\% of observations. Clear-sky midday GHI at the
+study's latitude exceeds 900~W/m\textsuperscript{2}, so the procedure
+removes physically valid high-irradiance data and compresses the range
+against which an RMSE of 47.30~W/m\textsuperscript{2} is subsequently
+reported. We apply physical-range validation only.
+
+\textbf{Metric definition.} The quantity defined as ``relative MAE'' in
+\cite{P2} is $\mathrm{mean}(|O-F|/F)$, which is MAPE rather than MAE
+normalised by the mean of observations---the convention that same work
+uses for relative RMSE. We compute and label MAE, rMAE and MAPE
+separately.
+
+\textbf{Night hours.} Any model trivially predicts zero at night, and
+retaining night hours inflates $R^{2}$ because between-group day/night
+variance dominates the total sum of squares. \cite{P2,P3,P4} all
+exclude night. We adopt the solar-zenith criterion of \cite{P3}
+($\theta_{z} < 87^{\circ}$), the only physically defined rule among
+them; fixed clock windows are latitude-dependent and fail at high
+latitude.
+
+These are observations about method, not allegations of error. Each is
+a choice that a reader cannot presently price, which is what
+Section~\ref{sec:results} sets out to change.
+
+% =====================================================================
+\section{Data and System}
+
+\subsection{Data source}
+
+All meteorological inputs are hourly ERA5 and ERA5-Land reanalysis
+\cite{hersbach2020}, retrieved through the Open-Meteo Historical
+Weather API \cite{openmeteo} without an API key. Retrieved variables
+are GHI (\texttt{shortwave\_radiation}), direct normal and diffuse
+irradiance, air temperature, relative humidity, dew point, surface
+pressure, wind speed and direction, cloud cover and precipitation.
+
+This is reanalysis, not pyranometer data: a modelled gridded product
+representing a cell of order 9--25~km rather than a sensor at a
+specific address. This bounds comparability---our figures are not
+directly comparable to the ground-station measurements of \cite{P2} or
+the on-site station of \cite{P4}---and we state it wherever results are
+reported. Data are CC-BY~4.0; ERA5 is \copyright~ECMWF/Copernicus.
+
+Experiments in Section~\ref{sec:results} use two to three years of
+hourly data at Hyderabad, India ($17.385^{\circ}$N,
+$78.487^{\circ}$E), typically ${\sim}26{,}000$ hours. Incomplete hours
+are dropped and reported, never imputed; we do not manufacture
+observations on which we then report metrics.
+
+\subsection{Physical chain}
+
+PV energy is obtained from irradiance through published models applied
+in sequence: Erbs decomposition \cite{erbs1982} to separate diffuse and
+direct components; HDKR transposition to the plane of array
+\cite{duffie2013}; the Faiman cell-temperature model
+\cite{faiman2008}; the PVWatts~v5 DC model \cite{dobos2014} with a
+nameplate temperature coefficient; a multiplicative loss stack; and
+inverter efficiency with AC clipping. Clear-sky reference irradiance
+uses the Haurwitz model \cite{haurwitz1945}.
+
+\subsection{Feature construction and the clear-sky index}
+
+Rather than predicting GHI directly, models predict the clear-sky index
+$k_{t} = \mathrm{GHI} / \mathrm{GHI}_{\mathrm{cs}}$, following
+\cite{P1}. Dividing out deterministic geometry leaves the atmospheric
+component---which is what a learned model can actually contribute---and
+has a direct consequence for feature attribution that
+Section~\ref{sec:f4} makes explicit.
+
+Standardisation is fitted \emph{inside} each cross-validation fold on
+training data only. Fitting a scaler on the full dataset before
+splitting leaks test-set statistics, and does so in a way that no
+subsequent metric will reveal.
+
+% =====================================================================
+\section{Methodology}
+
+\subsection{Validation protocol}
+
+Unless a comparison is explicitly about the split, all reported metrics
+use a chronological split with an embargo between train and test
+segments, and rolling-origin cross-validation. Night hours are excluded
+by the $\theta_{z} < 87^{\circ}$ criterion in training and in every
+reported metric.
+
+\subsection{Metrics}
+
+We report MAE, RMSE, rMAE and rRMSE (each normalised by the mean of
+observations), MAPE with a zero-denominator guard, $R^{2}$,
+Nash--Sutcliffe efficiency, and mean bias error. Probabilistic
+forecasts additionally report pinball loss, empirical coverage (PICP),
+normalised interval width (PINAW), and CRPS computed empirically from
+quantiles \cite{gneiting2007}. Skill scores are computed against
+persistence, clear-sky persistence, and hour-of-year climatology.
+
+Train-set metrics are never reported alone, only beside validation
+metrics, and a large gap is flagged. This is a direct response to
+\cite{P2}, where distance-weighted $k$-NN attains a training relative
+RMSE of 0.41\,\% against 5.77\,\% on test---train metrics for such a
+model describe interpolation, not generalisation.
+
+% =====================================================================
+\section{Results}
+\label{sec:results}
+
+Each subsection isolates one methodological choice. Model, seed,
+feature set and data are identical within each comparison; only the
+disputed element varies.
+
+% ---------------------------------------------------------------
+\subsection{The interval-label convention}
+\label{sec:f1}
+
+Irradiance in an hourly archive is a mean over an interval, whereas
+solar position is instantaneous. If position is evaluated at the
+interval \emph{label} rather than at the interval's representative
+instant, a systematic phase error follows. The convention is not
+documented in a form we could rely on, so we measured it, sweeping
+candidate offsets over a full year (Table~\ref{tab:f1}).
+
+\begin{table}[!t]
+\caption{Interval-offset sweep, Hyderabad, one year. The offset is
+applied to the timestamp at which solar position is evaluated.}
+\label{tab:f1}
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Offset & Clear-sky & Apparent night-time & $\mathrm{corr}$(GHI, \\
+(min) & exceedances & irradiance & clear-sky) \\
+\midrule
+$-60$ & 360 & 289 & 0.9340 \\
+$\mathbf{-30}$ & \textbf{0} & \textbf{216} & \textbf{0.9490} \\
+$0$   & 264 & 265 & 0.9372 \\
+$+30$ & 697 & 428 & 0.8998 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The $-30$~minute offset is the unique candidate producing zero
+physically impossible clear-sky exceedances, and it simultaneously
+maximises correlation with the clear-sky reference. We conclude that
+hourly radiation is the mean over the \emph{preceding} hour and the
+representative instant is 30~minutes before the label. Applying the
+correction raised the platform's data-quality score from 97.7\,\% to
+99.9\,\%.
+
+Two points deserve emphasis. First, the naive choice---offset
+zero---is not merely suboptimal but produces 264 physically impossible
+observations per year, which any downstream physical-range check will
+then either flag or silently absorb. Second, the sweep exposed a
+genuine defect in our own implementation: the PV chain evaluated solar
+position at the raw label while the feature pipeline used the
+midpoint, a 30-minute inconsistency that displaced the day/night
+boundary by a full hour at the terminator. It was caught by a test
+asserting zero PV output at night. We report it because the class of
+error is easy to introduce and invisible in aggregate metrics.
+
+% ---------------------------------------------------------------
+\subsection{Split optimism}
+\label{sec:f2}
+
+Table~\ref{tab:f2} varies only the splitting strategy.
+
+\begin{table}[!t]
+\caption{Effect of splitting strategy. Identical model, seed and
+dataset; two years, Hyderabad.}
+\label{tab:f2}
+\centering
+\begin{tabular}{lrr}
+\toprule
+Strategy & RMSE (W/m\textsuperscript{2}) & $R^{2}$ \\
+\midrule
+Chronological          & 74.68 & 0.9160 \\
+Blocked random (days)  & 68.97 & 0.9376 \\
+Random (hour level)    & 66.03 & 0.9427 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Hour-level random splitting understates RMSE by 11.6\,\% and overstates
+$R^{2}$ by $+0.027$. Blocking by whole days recovers roughly half the
+gap, which is consistent with the mechanism: the leak is driven by
+near-neighbour hours straddling the boundary, and blocking removes the
+within-day cases while leaving day-to-day persistence intact.
+
+An 11.6\,\% RMSE difference is comparable to the margin by which
+competing models are separated in several published comparisons. Where
+a study reports a random split, that margin is therefore not safely
+interpretable as a model difference. This substantiates quantitatively
+the concern that \cite{P5} raises about its own protocol.
+
+% ---------------------------------------------------------------
+\subsection{Prediction-interval calibration}
+\label{sec:f3}
+
+An interval that does not cover what it claims is worse than no
+interval, because it will be relied upon. Quantile gradient boosting
+trained directly for the 10th and 90th percentiles produced a nominal
+80\,\% interval with \textbf{66.3\,\%} empirical coverage.
+
+Applying conformalized quantile regression \cite{romano2019} restores
+calibration (Table~\ref{tab:f3}).
+
+\begin{table}[!t]
+\caption{Empirical coverage of a nominal 80\,\% prediction interval,
+before and after conformal calibration.}
+\label{tab:f3}
+\centering
+\begin{tabular}{lr}
+\toprule
+Condition & Coverage (\%) \\
+\midrule
+Uncalibrated quantile GBM, all hours & 66.3 \\
+\midrule
+Conformalized, all hours   & 80.2 \\
+\quad clear regime         & 80.3 \\
+\quad cloudy regime        & 80.0 \\
+\quad precipitation regime & 80.9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Coverage holds within two points inside every weather regime, using the
+regime thresholds of \cite{P3}. Conformal calibration is not drawn from
+the reconciled corpus and we label it an enhancement rather than an
+implementation of prior work.
+
+We also implemented and tested a seasonally stratified calibration
+split. It did not robustly improve coverage: results were non-monotone
+in its parameters (0.700, 0.725, 0.706, 0.790 as the embargo widened;
+0.767 against 0.834 for six versus eight blocks). Non-monotone response
+to a parameter that should act smoothly is instability, not signal, and
+selecting the best-scoring configuration would have been tuning on the
+test set. The simpler contiguous split was retained. We report the
+negative result because the alternative---reporting only the
+configuration that scored best---is precisely the practice that
+produces irreproducible intervals.
+
+% ---------------------------------------------------------------
+\subsection{Feature importance depends on the target}
+\label{sec:f4}
+
+Grouped permutation importance, predicting the clear-sky index at
+Hyderabad, is given in Table~\ref{tab:f4}.
+
+\begin{table}[!t]
+\caption{Grouped permutation importance when predicting the clear-sky
+index. Shares of measured effect.}
+\label{tab:f4}
+\centering
+\begin{tabular}{lr}
+\toprule
+Feature group & Share (\%) \\
+\midrule
+Temperature and moisture & 52.0 \\
+Cloud and precipitation  & 21.0 \\
+Solar geometry           & 17.0 \\
+Time of year / day       & 6.0 \\
+Pressure                 & 3.0 \\
+Wind                     & 1.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Solar geometry ranks third, whereas \cite{P5} finds geometry---angle of
+incidence in particular---dominant. The results are consistent rather
+than contradictory. \cite{P5} predicts raw PV power, in which geometry
+is the largest single driver; we divide geometry out before fitting, so
+what remains for the model to explain is the atmospheric component. In
+that residual space humidity and cloud dominate, which agrees with
+\cite{P2} finding temperature and humidity the leading meteorological
+predictors.
+
+The methodological point generalises: a feature-importance ranking is a
+statement about a target, not about solar energy. Two studies reporting
+different rankings may both be correct, and comparing their rankings
+without first reconciling their targets is not meaningful.
+
+% ---------------------------------------------------------------
+\subsection{Baselines coincide at day-ahead horizons}
+\label{sec:f5}
+
+Naive persistence and clear-sky (``smart'') persistence score
+143.4 and 143.3~W/m\textsuperscript{2} respectively at a 24-hour
+horizon. This is expected rather than anomalous: solar declination
+changes by at most ${\sim}0.4^{\circ}$ per day, so
+$k_{t}(t-24\mathrm{h}) \cdot \mathrm{GHI}_{\mathrm{cs}}(t) \approx
+\mathrm{GHI}(t-24\mathrm{h})$. The two diverge sharply at intra-day
+horizons. It is also why baselines must be formed in physical units:
+in clear-sky-index space they are algebraically the same function and
+the comparison would be vacuous. A reported day-ahead improvement over
+``smart persistence'' should therefore be checked against naive
+persistence, which at that horizon is the same baseline.
+
+% ---------------------------------------------------------------
+\subsection{Scenario responses can conceal opposing pathways}
+\label{sec:f6}
+
+A perturbation scenario of $+6^{\circ}$C with halved wind speed
+returned a net energy change of $+0.29\,\%$---counter-intuitive, since
+hotter modules are less efficient. Decomposition
+(Table~\ref{tab:f6}) shows two large opposing pathways.
+
+\begin{table}[!t]
+\caption{Decomposition of a $+6^{\circ}$C, halved-wind scenario.}
+\label{tab:f6}
+\centering
+\begin{tabular}{lr}
+\toprule
+Pathway & Effect (kWh) \\
+\midrule
+Statistical (learned: warm hours tend to be sunny hours) & $+114.3$ \\
+Physical (causal: hotter modules are less efficient)     & $-105.7$ \\
+\midrule
+Net & $+8.6$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The learned correlation and the causal physical response are of
+comparable magnitude and opposite sign. Reporting the net figure alone
+would conceal this, and would invite the reader to attribute a
+near-zero response to insensitivity rather than to cancellation. We
+surface both pathways separately. Doubling wind speed instead shows the
+causal pathway dominating ($+43.2$~kWh thermal against $-7.0$~kWh
+statistical), the physically expected result.
+
+This is a general hazard for any scenario analysis conducted with a
+model trained on observational data: the model has learned
+correlations that a counterfactual intervention does not preserve.
+
+% =====================================================================
+\section{Discussion}
+
+The effects reported here are not exotic. Each arises from a choice
+that is ordinary, defensible in isolation, and rarely varied within a
+single study. Their magnitudes, however, are on the same scale as the
+differences by which published models are separated: an 11.6\,\% RMSE
+shift from splitting alone, a 14-point coverage shortfall from omitting
+calibration, and a feature ranking that reorders entirely with the
+choice of target.
+
+We therefore suggest three reporting practices, each cheap once
+implemented. First, state the splitting strategy and, where a random
+split is used, report the chronological figure alongside it; the
+comparison costs one additional fit. Second, report empirical coverage
+whenever a prediction interval is shown, since a nominal level is an
+intention and not a measurement. Third, state the prediction target
+precisely enough that a feature-importance ranking can be interpreted,
+which for PV energy means declaring array size, tilt and period.
+
+None of this requires agreement with our modelling choices. The
+comparisons are internal: each holds the model fixed and varies only
+the practice under examination.
+
+% =====================================================================
+\section{Limitations and Threats to Validity}
+\label{sec:limits}
+
+We state these plainly because they bound what the paper claims.
+
+\textbf{Modelled, not measured.} No metered generation from an
+installed system was available to us. Every PV energy figure is a
+physical chain applied to reanalysis weather and has \emph{not} been
+validated against real production. We consequently make no claim about
+absolute forecast accuracy against physical plant, and readers should
+not extract one. The findings in Section~\ref{sec:results} are
+controlled internal comparisons, in which the absence of plant ground
+truth affects both arms equally and therefore does not threaten the
+contrast---but this is an argument for the specific claims made, not a
+general licence.
+
+\textbf{Reanalysis, not a pyranometer.} ERA5 represents a grid cell,
+not a point. Local haze, dust and coastal cloud may differ materially
+from the cell average, and our figures are not directly comparable to
+studies using ground stations.
+
+\textbf{Single-site experiments.} The measurements in
+Section~\ref{sec:results} were conducted at one location. The
+mechanisms are general---autocorrelation, interval labelling, quantile
+miscalibration---but the effect \emph{sizes} should be expected to vary
+with climate, and particularly with the frequency of rapid cloud
+transitions. Multi-site replication is the most immediate extension.
+
+\textbf{Interval-label finding is source-specific.} The $-30$~minute
+result characterises this archive's convention. The measurement
+procedure transfers to other sources; the offset should not be assumed
+to.
+
+\textbf{Scope.} Deep sequence models \cite{P6} and full copula-based
+dynamic feature selection \cite{P3} are not implemented, and are
+labelled as future work rather than approximated.
+
+% =====================================================================
+\section{Conclusion}
+
+We reconciled six solar-forecasting studies into one platform and used
+it to price three evaluation choices that the literature generally
+leaves unpriced. Random splitting of autocorrelated hourly data
+understates RMSE by 11.6\,\% and overstates $R^{2}$ by 0.027. Hourly
+reanalysis irradiance is labelled at the end of its averaging interval,
+and ignoring this produces 264 physically impossible observations per
+year at a single site. A nominal 80\,\% prediction interval from
+uncalibrated quantile regression covered 66.3\,\% of observations,
+which conformal calibration restored to 80.2\,\% across every weather
+regime. We further showed that permutation importance is a statement
+about a target rather than about solar energy, reconciling two
+published rankings, and that a scenario response can hide two large
+opposing pathways.
+
+Future work is field validation against metered generation, which is
+the one thing that would let accuracy claims be made at all;
+multi-site replication to establish how the effect sizes vary with
+climate; and extension to the deep sequence models the corpus
+identifies but this work does not implement.
+
+% =====================================================================
+\section*{Reproducibility}
+
+The platform, the reproducibility manifest, and the interval
+calibration script used for Table~\ref{tab:f1} accompany this
+submission. All meteorological inputs come from a keyless public API,
+so every experiment can be repeated at arbitrary coordinates without
+credentials or a data-use agreement.
+
+% =====================================================================
+\section*{Acknowledgment}
+
+The authors thank the Department of Computer Science and Engineering
+for supporting this work. Weather and solar-resource data are provided
+by Open-Meteo under CC-BY~4.0; ERA5 is \copyright~ECMWF/Copernicus.
+
+% =====================================================================
+\balance
+\begin{thebibliography}{00}
+
+\bibitem{P1} R.~Hobbs and S.~Joshi, ``Using open-source forecasts for
+solar plant maintenance outage scheduling can reduce lost energy,''
+\emph{IEEE J. Photovoltaics}, 2026, accepted for publication.
+
+\bibitem{P2} T.~Mabodi and J.~Hammujuddy, ``Solar irradiance
+forecasting for informed solar systems design and financing
+decisions,'' \emph{SAIEE Africa Research Journal}, vol.~115, no.~3,
+2024.
+
+\bibitem{P3} Y.~Lyu and S.~Eftekharnejad, ``Probabilistic solar
+generation forecasting for rapidly changing weather conditions,''
+\emph{IEEE Access}, vol.~12, 2024.
+
+\bibitem{P4} J.~Rosales Huamani \emph{et al.}, ``Efficient ML models
+for solar radiation prediction using ensemble techniques: A case study
+in low-rainfall arid climates,'' \emph{IEEE Access}, vol.~13, 2025.
+
+\bibitem{P5} K.~Vijay Babu \emph{et al.}, ``Solar energy forecasting
+using machine learning techniques for enhanced grid stability,''
+\emph{IEEE Access}, vol.~13, 2025.
+
+\bibitem{P6} M.~Hayajneh \emph{et al.}, ``Intelligent solar forecasts:
+Modern ML models and TinyML role for improved solar energy yield
+predictions,'' \emph{IEEE Access}, vol.~12, 2024.
+
+\bibitem{hersbach2020} H.~Hersbach \emph{et al.}, ``The ERA5 global
+reanalysis,'' \emph{Q. J. R. Meteorol. Soc.}, vol.~146, no.~730,
+pp.~1999--2049, 2020.
+
+\bibitem{openmeteo} P.~Zippenfenig, ``Open-Meteo.com weather API,''
+2023. [Online]. Available: \url{https://open-meteo.com}
+
+\bibitem{breiman2001} L.~Breiman, ``Random forests,'' \emph{Machine
+Learning}, vol.~45, no.~1, pp.~5--32, 2001.
+
+\bibitem{geurts2006} P.~Geurts, D.~Ernst, and L.~Wehenkel,
+``Extremely randomized trees,'' \emph{Machine Learning}, vol.~63,
+no.~1, pp.~3--42, 2006.
+
+\bibitem{ke2017} G.~Ke \emph{et al.}, ``LightGBM: A highly efficient
+gradient boosting decision tree,'' in \emph{Advances in Neural
+Information Processing Systems}, vol.~30, 2017.
+
+\bibitem{wolpert1992} D.~H. Wolpert, ``Stacked generalization,''
+\emph{Neural Networks}, vol.~5, no.~2, pp.~241--259, 1992.
+
+\bibitem{hoerl1970} A.~E. Hoerl and R.~W. Kennard, ``Ridge regression:
+Biased estimation for nonorthogonal problems,'' \emph{Technometrics},
+vol.~12, no.~1, pp.~55--67, 1970.
+
+\bibitem{romano2019} Y.~Romano, E.~Patterson, and E.~Cand\`{e}s,
+``Conformalized quantile regression,'' in \emph{Advances in Neural
+Information Processing Systems}, vol.~32, 2019.
+
+\bibitem{gneiting2007} T.~Gneiting and A.~E. Raftery, ``Strictly
+proper scoring rules, prediction, and estimation,'' \emph{J. Amer.
+Statist. Assoc.}, vol.~102, no.~477, pp.~359--378, 2007.
+
+\bibitem{erbs1982} D.~G. Erbs, S.~A. Klein, and J.~A. Duffie,
+``Estimation of the diffuse radiation fraction for hourly, daily and
+monthly-average global radiation,'' \emph{Solar Energy}, vol.~28,
+no.~4, pp.~293--302, 1982.
+
+\bibitem{duffie2013} J.~A. Duffie and W.~A. Beckman, \emph{Solar
+Engineering of Thermal Processes}, 4th~ed. Hoboken, NJ, USA: Wiley,
+2013.
+
+\bibitem{faiman2008} D.~Faiman, ``Assessing the outdoor operating
+temperature of photovoltaic modules,'' \emph{Progress in
+Photovoltaics}, vol.~16, no.~4, pp.~307--315, 2008.
+
+\bibitem{dobos2014} A.~P. Dobos, ``PVWatts version~5 manual,''
+National Renewable Energy Laboratory, Golden, CO, USA, Tech. Rep.
+NREL/TP-6A20-62641, 2014.
+
+\bibitem{haurwitz1945} B.~Haurwitz, ``Insolation in relation to
+cloudiness and cloud density,'' \emph{J. Meteorology}, vol.~2, no.~1,
+pp.~1--8, 1945.
+
+\bibitem{pedregosa2011} F.~Pedregosa \emph{et al.}, ``Scikit-learn:
+Machine learning in Python,'' \emph{J. Machine Learning Research},
+vol.~12, pp.~2825--2830, 2011.
+
+\end{thebibliography}
+
+\end{document}
