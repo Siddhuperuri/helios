@@ -23,7 +23,20 @@ import requests
 import joblib
 import pandas as pd
 
-MODEL_PATH = r"C:\Projects_AI\college_project\solar_stacking_model.joblib"
+MODEL_PATHS = {
+    "plants": r"C:\Projects_AI\college_project\solar_stacking_model_plants.joblib",
+    "synthetic": r"C:\Projects_AI\college_project\solar_stacking_model.joblib",
+}
+
+# NOCT cell-temperature model, used to derive module temperature from the
+# fetched air temperature, irradiance and wind speed. The "plants" model was
+# trained against measured module temperature, so wind still enters the
+# pipeline through this step.
+NOCT = 45.0
+
+
+def module_temperature(air_temp, irradiance, wind_speed):
+    return air_temp + (NOCT - 20) / 800.0 * irradiance / (1 + 0.05 * wind_speed)
 
 GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
@@ -75,6 +88,9 @@ def main():
     ap.add_argument("--lon", type=float, help="Longitude (skips geocoding)")
     ap.add_argument("--date", default=date.today().isoformat(), help="YYYY-MM-DD (default: today)")
     ap.add_argument("--hour", type=int, default=datetime.now().hour, help="0-23 local hour (default: current hour)")
+    ap.add_argument("--model", choices=("plants", "synthetic"), default="plants",
+                    help="'plants' = trained on measured output from both plant datasets (default); "
+                         "'synthetic' = trained on PV-model output from hourly weather history")
     args = ap.parse_args()
 
     if args.lat is not None and args.lon is not None:
@@ -103,12 +119,22 @@ def main():
         print("Weather data incomplete for that hour (may be too far in the future).", file=sys.stderr)
         sys.exit(1)
 
-    model = joblib.load(MODEL_PATH)
-    features = pd.DataFrame(
-        [[irradiance, air_temp, wind_speed]],
-        columns=["irradiance_w_m2", "air_temp_c", "wind_speed_ms"],
-    )
-    predicted_kwh = model.predict(features)[0]
+    model = joblib.load(MODEL_PATHS[args.model])
+    if args.model == "plants":
+        mod_temp = module_temperature(air_temp, irradiance, wind_speed)
+        features = pd.DataFrame(
+            [[irradiance, air_temp, mod_temp]],
+            columns=["irradiance_w_m2", "air_temp_c", "module_temp_c"],
+        )
+        # The plant model predicts kWh per 15-minute interval; report hourly.
+        predicted_kwh = model.predict(features)[0] * 4
+    else:
+        mod_temp = None
+        features = pd.DataFrame(
+            [[irradiance, air_temp, wind_speed]],
+            columns=["irradiance_w_m2", "air_temp_c", "wind_speed_ms"],
+        )
+        predicted_kwh = model.predict(features)[0]
 
     print(f"Location:        {label}  (lat {lat:.4f}, lon {lon:.4f})")
     print(f"Date / time:     {args.date} {args.hour:02d}:00 local")
@@ -116,6 +142,9 @@ def main():
     print(f"Irradiance:      {irradiance:.1f} W/m^2")
     print(f"Air temperature: {air_temp:.1f} C")
     print(f"Wind speed:      {wind_speed:.1f} m/s")
+    if mod_temp is not None:
+        print(f"Module temp:     {mod_temp:.1f} C  (derived, NOCT model)")
+    print(f"Model:           {args.model}")
     print(f"Predicted output: {predicted_kwh:.3f} kWh  (5 kW reference system)")
 
 
