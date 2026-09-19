@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Trains the 4-model stacking ensemble described in the abstract -- Random Forest,
-Histogram Gradient Boosting, Extremely Randomised Trees and Ridge Regression --
-on REAL measured inverter output from all four plant files:
+Trains the project's model -- XGBoost -- on REAL measured inverter output from all
+four plant files:
 
     Plant_1_Generation_Data.csv   + Plant_1_Weather_Sensor_Data.csv
     Plant_2_Generation_Data.csv   + Plant_2_Weather_Sensor_Data.csv
@@ -11,13 +10,21 @@ Each plant's generation log is joined to its weather log on DATE_TIME, the two
 plants are pooled, and the target is measured AC output normalised to a 5 kW
 reference system (kWh per 15-minute interval) so both plants share one scale.
 
+The four earlier models -- Random Forest, Histogram Gradient Boosting, Extremely
+Randomised Trees and Ridge Regression -- and their stacking ensemble are kept as
+baselines, scored on the same holdout so XGBoost's result has a reference point.
+
 Evaluated on data held out in date order (last 7 days vs the rest), and also
 plant-against-plant to show cross-site generalisation.
+
+Usage:
+  python train_model_plants.py
+  python train_model_plants.py --data-dir "D:\\datasets\\solar"
 """
+import argparse
 import time
 
 import joblib
-import numpy as np
 import pandas as pd
 from sklearn.ensemble import (
     ExtraTreesRegressor,
@@ -27,9 +34,10 @@ from sklearn.ensemble import (
 )
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, r2_score
+from xgboost import XGBRegressor
 
-DATA_DIR = r"C:\Users\siddh\Downloads\archive"
-MODEL_OUT = r"C:\Projects_AI\college_project\solar_stacking_model_plants.joblib"
+DEFAULT_DATA_DIR = r"C:\Users\siddh\Downloads\archive"
+MODEL_OUT = r"C:\Projects_AI\college_project\solar_xgboost_model_plants.joblib"
 
 REFERENCE_KW = 5.0          # abstract's reference system size
 INTERVAL_HOURS = 0.25       # records are 15 minutes apart
@@ -39,10 +47,31 @@ FEATURES = ["irradiance_w_m2", "air_temp_c", "module_temp_c"]
 TARGET = "energy_output_kwh"
 
 
-def load_plant(plant_no, dayfirst_generation):
+def make_xgboost():
+    return XGBRegressor(
+        n_estimators=400,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.8,
+        reg_lambda=1.0,
+        n_jobs=-1,
+        random_state=42,
+    )
+
+
+def make_baselines():
+    return [
+        ("random_forest", RandomForestRegressor(n_estimators=150, max_depth=14, n_jobs=-1, random_state=42)),
+        ("hist_gb", HistGradientBoostingRegressor(max_iter=200, random_state=42)),
+        ("extra_trees", ExtraTreesRegressor(n_estimators=150, max_depth=14, n_jobs=-1, random_state=42)),
+        ("ridge", Ridge(alpha=1.0)),
+    ]
+
+
+def load_plant(data_dir, plant_no, dayfirst_generation):
     """Join one plant's generation log to its weather log."""
-    gen = pd.read_csv(rf"{DATA_DIR}\Plant_{plant_no}_Generation_Data.csv")
-    wx = pd.read_csv(rf"{DATA_DIR}\Plant_{plant_no}_Weather_Sensor_Data.csv")
+    gen = pd.read_csv(rf"{data_dir}\Plant_{plant_no}_Generation_Data.csv")
+    wx = pd.read_csv(rf"{data_dir}\Plant_{plant_no}_Weather_Sensor_Data.csv")
 
     # Plant 1 stores DD-MM-YYYY HH:MM, Plant 2 stores YYYY-MM-DD HH:MM:SS.
     gen["DATE_TIME"] = pd.to_datetime(gen["DATE_TIME"], dayfirst=dayfirst_generation)
@@ -67,69 +96,73 @@ def load_plant(plant_no, dayfirst_generation):
     return df[["DATE_TIME", "plant", "SOURCE_KEY", *FEATURES, TARGET]]
 
 
-def evaluate(name, model, X_tr, y_tr, X_te, y_te, fit=True):
-    if fit:
-        model.fit(X_tr, y_tr)
+def score(model, X_te, y_te):
     p = model.predict(X_te)
     return r2_score(y_te, p), mean_absolute_error(y_te, p)
 
 
-print("Loading all four plant files...")
-t0 = time.time()
-p1 = load_plant(1, dayfirst_generation=True)
-p2 = load_plant(2, dayfirst_generation=False)
-df = pd.concat([p1, p2], ignore_index=True).sort_values("DATE_TIME")
-print(f"  Plant 1: {len(p1):,} rows   Plant 2: {len(p2):,} rows   pooled: {len(df):,}")
-print(f"  {df.DATE_TIME.min().date()} to {df.DATE_TIME.max().date()}  ({time.time() - t0:.1f}s)")
+def main():
+    ap = argparse.ArgumentParser(description="Train the XGBoost solar output model.")
+    ap.add_argument("--data-dir", default=DEFAULT_DATA_DIR,
+                    help="Folder holding the four Plant_*.csv files")
+    args = ap.parse_args()
 
-cutoff = df["DATE_TIME"].max().normalize() - pd.Timedelta(days=HOLDOUT_DAYS - 1)
-train_df = df[df["DATE_TIME"] < cutoff]
-test_df = df[df["DATE_TIME"] >= cutoff]
+    print("Loading all four plant files...")
+    t0 = time.time()
+    p1 = load_plant(args.data_dir, 1, dayfirst_generation=True)
+    p2 = load_plant(args.data_dir, 2, dayfirst_generation=False)
+    df = pd.concat([p1, p2], ignore_index=True).sort_values("DATE_TIME")
+    print(f"  Plant 1: {len(p1):,} rows   Plant 2: {len(p2):,} rows   pooled: {len(df):,}")
+    print(f"  {df.DATE_TIME.min().date()} to {df.DATE_TIME.max().date()}  ({time.time() - t0:.1f}s)")
 
-X_train, y_train = train_df[FEATURES], train_df[TARGET]
-X_test, y_test = test_df[FEATURES], test_df[TARGET]
-print(f"\nTrain: {len(X_train):,} rows (before {cutoff.date()})")
-print(f"Test:  {len(X_test):,} rows (from {cutoff.date()}, held out in date order)")
+    cutoff = df["DATE_TIME"].max().normalize() - pd.Timedelta(days=HOLDOUT_DAYS - 1)
+    train_df = df[df["DATE_TIME"] < cutoff]
+    test_df = df[df["DATE_TIME"] >= cutoff]
 
-base_learners = [
-    ("random_forest", RandomForestRegressor(n_estimators=150, max_depth=14, n_jobs=-1, random_state=42)),
-    ("hist_gb", HistGradientBoostingRegressor(max_iter=200, random_state=42)),
-    ("extra_trees", ExtraTreesRegressor(n_estimators=150, max_depth=14, n_jobs=-1, random_state=42)),
-    ("ridge", Ridge(alpha=1.0)),
-]
+    X_train, y_train = train_df[FEATURES], train_df[TARGET]
+    X_test, y_test = test_df[FEATURES], test_df[TARGET]
+    print(f"\nTrain: {len(X_train):,} rows (before {cutoff.date()})")
+    print(f"Test:  {len(X_test):,} rows (from {cutoff.date()}, held out in date order)")
 
-stack = StackingRegressor(
-    estimators=base_learners,
-    final_estimator=Ridge(alpha=1.0),
-    n_jobs=-1,
-    passthrough=False,
-)
+    # ---- the project's model
+    print("\nTraining XGBoost...")
+    t0 = time.time()
+    model = make_xgboost()
+    model.fit(X_train, y_train)
+    print(f"  trained in {time.time() - t0:.1f}s")
 
-print("\nTraining stacking ensemble...")
-t0 = time.time()
-stack.fit(X_train, y_train)
-print(f"  trained in {time.time() - t0:.1f}s")
+    r2, mae = score(model, X_test, y_test)
+    print(f"\nHold-out evaluation (last {HOLDOUT_DAYS} days, unseen in date order):")
+    print(f"  XGBoost      R^2={r2:.4f}  MAE={mae:.4f} kWh per 15 min  "
+          f"(~{mae * 4:.3f} kWh per hour, 5 kW system)")
 
-r2, mae = evaluate("stack", stack, None, None, X_test, y_test, fit=False)
-print(f"\nHold-out evaluation (last {HOLDOUT_DAYS} days, unseen in date order):")
-print(f"  stacking     R^2={r2:.4f}  MAE={mae:.4f} kWh")
+    print("\nFeature importance (XGBoost, gain):")
+    for name, imp in sorted(zip(FEATURES, model.feature_importances_), key=lambda t: -t[1]):
+        print(f"  {name:16s} {imp:.3f}")
 
-print("\nPer-model comparison on the same holdout:")
-for name, model in base_learners:
-    r, m = evaluate(name, model, X_train, y_train, X_test, y_test)
-    print(f"  {name:12s} R^2={r:.4f}  MAE={m:.4f}")
+    # ---- baselines on the same holdout
+    print("\nBaselines on the same holdout:")
+    baselines = make_baselines()
+    for name, m in baselines:
+        m.fit(X_train, y_train)
+        r, e = score(m, X_test, y_test)
+        print(f"  {name:12s} R^2={r:.4f}  MAE={e:.4f}")
+    stack = StackingRegressor(estimators=make_baselines(), final_estimator=Ridge(alpha=1.0), n_jobs=-1)
+    stack.fit(X_train, y_train)
+    r, e = score(stack, X_test, y_test)
+    print(f"  {'stacking':12s} R^2={r:.4f}  MAE={e:.4f}")
 
-print("\nCross-plant generalisation (train on one site, test on the other):")
-for tr, te in ((1, 2), (2, 1)):
-    a, b = df[df.plant == tr], df[df.plant == te]
-    s = StackingRegressor(
-        estimators=[(n, type(m)(**m.get_params())) for n, m in base_learners],
-        final_estimator=Ridge(alpha=1.0), n_jobs=-1,
-    )
-    s.fit(a[FEATURES], a[TARGET])
-    p = s.predict(b[FEATURES])
-    print(f"  train Plant {tr} -> test Plant {te}: "
-          f"R^2={r2_score(b[TARGET], p):.4f}  MAE={mean_absolute_error(b[TARGET], p):.4f}")
+    # ---- cross-site generalisation for the project's model
+    print("\nCross-plant generalisation, XGBoost (train on one site, test on the other):")
+    for tr, te in ((1, 2), (2, 1)):
+        a, b = df[df.plant == tr], df[df.plant == te]
+        m = make_xgboost().fit(a[FEATURES], a[TARGET])
+        r, e = score(m, b[FEATURES], b[TARGET])
+        print(f"  train Plant {tr} -> test Plant {te}: R^2={r:.4f}  MAE={e:.4f}")
 
-joblib.dump(stack, MODEL_OUT, compress=3)
-print(f"\nSaved trained model to {MODEL_OUT}")
+    joblib.dump(model, MODEL_OUT, compress=3)
+    print(f"\nSaved XGBoost model to {MODEL_OUT}")
+
+
+if __name__ == "__main__":
+    main()

@@ -4,9 +4,9 @@ End-to-end solar output prediction for ANY location on Earth and ANY date/time
 (recent past or near-future), matching the abstract's described pipeline:
 
   location (city name or GPS) -> geocode to lat/lon -> fetch irradiance,
-  air temperature, wind speed for that place/time -> feed into the trained
-  stacking ensemble (Random Forest, Histogram Gradient Boosting, Extremely
-  Randomised Trees, Ridge Regression) -> predicted energy output in kWh.
+  air temperature, wind speed for that place/time -> derive module temperature
+  (NOCT model) -> feed into the trained XGBoost model -> predicted energy
+  output in kWh.
 
 No dataset download needed - weather is fetched on demand from Open-Meteo,
 which is free, keyless, and covers the whole globe.
@@ -24,14 +24,15 @@ import joblib
 import pandas as pd
 
 MODEL_PATHS = {
+    "xgboost": r"C:\Projects_AI\college_project\solar_xgboost_model_plants.joblib",
     "plants": r"C:\Projects_AI\college_project\solar_stacking_model_plants.joblib",
     "synthetic": r"C:\Projects_AI\college_project\solar_stacking_model.joblib",
 }
 
 # NOCT cell-temperature model, used to derive module temperature from the
-# fetched air temperature, irradiance and wind speed. The "plants" model was
-# trained against measured module temperature, so wind still enters the
-# pipeline through this step.
+# fetched air temperature, irradiance and wind speed. The "xgboost" and "plants"
+# models were trained against measured module temperature, so wind still enters
+# the pipeline through this step.
 NOCT = 45.0
 
 
@@ -88,8 +89,9 @@ def main():
     ap.add_argument("--lon", type=float, help="Longitude (skips geocoding)")
     ap.add_argument("--date", default=date.today().isoformat(), help="YYYY-MM-DD (default: today)")
     ap.add_argument("--hour", type=int, default=datetime.now().hour, help="0-23 local hour (default: current hour)")
-    ap.add_argument("--model", choices=("plants", "synthetic"), default="plants",
-                    help="'plants' = trained on measured output from both plant datasets (default); "
+    ap.add_argument("--model", choices=("xgboost", "plants", "synthetic"), default="xgboost",
+                    help="'xgboost' = the project's model, trained on measured plant output (default); "
+                         "'plants' = baseline stacking ensemble on the same data; "
                          "'synthetic' = trained on PV-model output from hourly weather history")
     args = ap.parse_args()
 
@@ -120,7 +122,7 @@ def main():
         sys.exit(1)
 
     model = joblib.load(MODEL_PATHS[args.model])
-    if args.model == "plants":
+    if args.model in ("xgboost", "plants"):
         mod_temp = module_temperature(air_temp, irradiance, wind_speed)
         features = pd.DataFrame(
             [[irradiance, air_temp, mod_temp]],
