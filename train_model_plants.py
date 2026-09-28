@@ -22,9 +22,12 @@ Usage:
   python train_model_plants.py --data-dir "D:\\datasets\\solar"
 """
 import argparse
+import json
 import time
+from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import (
     ExtraTreesRegressor,
@@ -37,7 +40,13 @@ from sklearn.metrics import mean_absolute_error, r2_score
 from xgboost import XGBRegressor
 
 DEFAULT_DATA_DIR = r"C:\Users\siddh\Downloads\archive"
-MODEL_OUT = r"C:\Projects_AI\college_project\solar_xgboost_model_plants.joblib"
+# Saved inside the backend package so the web app ships with it (Docker builds from
+# ./backend); predict_solar.py reads the same file.
+MODEL_OUT = str(Path(__file__).resolve().parent / "backend" / "app" / "models" / "artifacts"
+                / "solar_xgboost_model_plants.joblib")
+# Hold-out results written beside the model, so anything serving it (the web app)
+# reports the measured figures instead of restating them by hand.
+METRICS_OUT = MODEL_OUT.replace(".joblib", ".metrics.json")
 
 REFERENCE_KW = 5.0          # abstract's reference system size
 INTERVAL_HOURS = 0.25       # records are 15 minutes apart
@@ -131,37 +140,79 @@ def main():
     model.fit(X_train, y_train)
     print(f"  trained in {time.time() - t0:.1f}s")
 
-    r2, mae = score(model, X_test, y_test)
+    test_pred = model.predict(X_test)
+    r2 = r2_score(y_test, test_pred)
+    mae = mean_absolute_error(y_test, test_pred)
+    rmse = float(np.sqrt(np.mean((y_test.to_numpy() - test_pred) ** 2)))
     print(f"\nHold-out evaluation (last {HOLDOUT_DAYS} days, unseen in date order):")
     print(f"  XGBoost      R^2={r2:.4f}  MAE={mae:.4f} kWh per 15 min  "
           f"(~{mae * 4:.3f} kWh per hour, 5 kW system)")
 
     print("\nFeature importance (XGBoost, gain):")
-    for name, imp in sorted(zip(FEATURES, model.feature_importances_), key=lambda t: -t[1]):
+    importance = {n: float(i) for n, i in zip(FEATURES, model.feature_importances_)}
+    for name, imp in sorted(importance.items(), key=lambda t: -t[1]):
         print(f"  {name:16s} {imp:.3f}")
+
+    # Hourly residuals: each inverter's four 15-minute intervals summed into one hour, so
+    # a request that asks about an hour gets an interval measured at that granularity.
+    hourly = test_df[["SOURCE_KEY", "DATE_TIME", TARGET, "irradiance_w_m2"]].copy()
+    hourly["pred"] = test_pred
+    hourly["hour"] = hourly["DATE_TIME"].dt.floor("h")
+    g = hourly.groupby(["SOURCE_KEY", "hour"]).agg(
+        y=(TARGET, "sum"), p=("pred", "sum"), n=(TARGET, "size"), irr=("irradiance_w_m2", "sum"))
+    g = g[(g["n"] == 4) & (g["irr"] > 0)]
+    hourly_residuals = (g["y"] - g["p"]).to_numpy()
+    if hourly_residuals.size > 5000:
+        hourly_residuals = np.random.default_rng(42).choice(hourly_residuals, 5000, replace=False)
 
     # ---- baselines on the same holdout
     print("\nBaselines on the same holdout:")
-    baselines = make_baselines()
-    for name, m in baselines:
+    baseline_results = []
+    for name, m in make_baselines():
         m.fit(X_train, y_train)
         r, e = score(m, X_test, y_test)
+        baseline_results.append({"model": name, "r2": r, "mae_kwh": e})
         print(f"  {name:12s} R^2={r:.4f}  MAE={e:.4f}")
     stack = StackingRegressor(estimators=make_baselines(), final_estimator=Ridge(alpha=1.0), n_jobs=-1)
     stack.fit(X_train, y_train)
     r, e = score(stack, X_test, y_test)
+    baseline_results.append({"model": "stacking", "r2": r, "mae_kwh": e})
     print(f"  {'stacking':12s} R^2={r:.4f}  MAE={e:.4f}")
 
     # ---- cross-site generalisation for the project's model
     print("\nCross-plant generalisation, XGBoost (train on one site, test on the other):")
+    cross_plant = []
     for tr, te in ((1, 2), (2, 1)):
         a, b = df[df.plant == tr], df[df.plant == te]
         m = make_xgboost().fit(a[FEATURES], a[TARGET])
         r, e = score(m, b[FEATURES], b[TARGET])
+        cross_plant.append({"train_plant": tr, "test_plant": te, "r2": r, "mae_kwh": e})
         print(f"  train Plant {tr} -> test Plant {te}: R^2={r:.4f}  MAE={e:.4f}")
 
     joblib.dump(model, MODEL_OUT, compress=3)
     print(f"\nSaved XGBoost model to {MODEL_OUT}")
+
+    metrics = {
+        "model": "xgboost",
+        "features": FEATURES,
+        "target": TARGET,
+        "reference_kw": REFERENCE_KW,
+        "interval_minutes": int(INTERVAL_HOURS * 60),
+        "n_inverters": int(df["SOURCE_KEY"].nunique()),
+        "train_period": [str(train_df.DATE_TIME.min().date()), str(train_df.DATE_TIME.max().date())],
+        "test_period": [str(test_df.DATE_TIME.min().date()), str(test_df.DATE_TIME.max().date())],
+        "holdout_days": HOLDOUT_DAYS,
+        "n_train": int(len(train_df)),
+        "n_test": int(len(test_df)),
+        "holdout": {"r2": r2, "mae_kwh": mae, "rmse_kwh": rmse},
+        "feature_importance": importance,
+        "baselines": baseline_results,
+        "cross_plant": cross_plant,
+        "hourly_residuals_kwh": [round(float(v), 4) for v in np.sort(hourly_residuals)],
+    }
+    with open(METRICS_OUT, "w", encoding="utf-8") as fh:
+        json.dump(metrics, fh, indent=1)
+    print(f"Saved hold-out results to {METRICS_OUT}")
 
 
 if __name__ == "__main__":

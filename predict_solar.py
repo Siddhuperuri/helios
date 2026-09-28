@@ -18,13 +18,14 @@ Usage:
 import argparse
 import sys
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 import requests
 import joblib
 import pandas as pd
 
 MODEL_PATHS = {
-    "xgboost": r"C:\Projects_AI\college_project\solar_xgboost_model_plants.joblib",
+    "xgboost": str(Path(__file__).resolve().parent / "backend" / "app" / "models" / "artifacts" / "solar_xgboost_model_plants.joblib"),
     "plants": r"C:\Projects_AI\college_project\solar_stacking_model_plants.joblib",
     "synthetic": r"C:\Projects_AI\college_project\solar_stacking_model.joblib",
 }

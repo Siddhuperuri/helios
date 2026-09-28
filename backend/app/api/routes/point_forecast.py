@@ -50,7 +50,8 @@ from app.data.sources import (
     resolve_location,
 )
 from app.features.pipeline import HOURS_PER_INTERVAL, build_features
-from app.models import registry
+from app.features.solar_geometry import PVSystem
+from app.models import plant_model, registry
 from app.models.forecast import operating_conditions
 from app.schemas.point_forecast import PointForecastRequest
 
@@ -155,37 +156,96 @@ def _residual_interval(
     return interval
 
 
-@router.post("/point-forecast")
-def point_forecast(request: PointForecastRequest) -> dict[str, Any]:
-    """Predict AC energy for one hour at one location, training only on earlier data.
+def _resolve_target(
+    request: PointForecastRequest,
+) -> tuple[Location, Any, str, pd.Timestamp, pd.Timestamp, date]:
+    """The place, its time zone, and the requested hour in UTC and local time.
 
-    The response carries the hour's energy and its day's total, the three weather
-    parameters that drive them, the resolved place, the operating notes, a prediction
-    interval, and — for the ensemble — each base model's own prediction alongside the
-    blended one.
+    Flooring happens in UTC, not in local time, because the archive is hourly *on UTC
+    hours*. In a zone offset by a whole number of hours the two are the same operation;
+    in one offset by thirty minutes they are not, and flooring locally would name an
+    instant the archive has no record for. The resolved hour is echoed back in both
+    frames so a caller in such a zone can see that 13:00 was answered as 12:30.
     """
-    settings = get_settings()
-    system = to_pv_system(request.system)
-
     location = resolve_location(
         query=request.location.query,
         latitude=request.location.latitude,
         longitude=request.location.longitude,
     )
     tzinfo, tz_source = _zone(location)
-
-    # ------------------------------------------------------------------ the target hour
-    #
-    # Flooring happens in UTC, not in local time, because the archive is hourly *on UTC
-    # hours*. In a zone offset by a whole number of hours the two are the same operation;
-    # in one offset by thirty minutes they are not, and flooring locally would name an
-    # instant the archive has no record for. The resolved hour is echoed back in both
-    # frames so a caller in such a zone can see that 13:00 was answered as 12:30.
     requested = request.target_datetime
     aware = requested.replace(tzinfo=tzinfo) if requested.tzinfo is None else requested
     target_utc = pd.Timestamp(aware).tz_convert("UTC").floor("h")
     local_target = target_utc.tz_convert(tzinfo)
-    target_date = local_target.date()
+    return location, tzinfo, tz_source, target_utc, local_target, local_target.date()
+
+
+def _target_day(
+    location: Location, tzinfo: Any, target_utc: pd.Timestamp, local_target: pd.Timestamp,
+    target_date: date, **features: Any,
+) -> pd.DataFrame:
+    """The target's local day of hourly weather features, refusing if the hour is missing."""
+    raw_day = fetch_archive(location, target_date - _DAY_MARGIN, target_date + _DAY_MARGIN)
+    frame = build_features(raw_day, location, daytime_only=False, **features).frame
+    day_frame = frame[frame.index.tz_convert(tzinfo).date == target_date]
+    if day_frame.empty:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"The archive returned no complete hourly records for "
+                f"{target_date.isoformat()} at {location.label}. Reanalysis is occasionally "
+                f"incomplete near the publication boundary; try a slightly earlier date."
+            ),
+        )
+    if target_utc not in day_frame.index:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"The archive has no complete record for "
+                f"{local_target.strftime('%Y-%m-%d %H:%M')} at {location.label}. Every "
+                f"weather input has to be present — nothing is imputed — so this hour "
+                f"cannot be predicted. Try another hour on the same day."
+            ),
+        )
+    return day_frame
+
+
+def _target_payload(
+    request: PointForecastRequest, tzinfo: Any, tz_source: str, target_utc: pd.Timestamp,
+    local_target: pd.Timestamp, weather: pd.Series, is_daytime: bool,
+) -> dict[str, Any]:
+    return {
+        "requested": request.target_datetime.isoformat(),
+        "resolved_local": local_target.isoformat(),
+        "resolved_utc": target_utc.isoformat(),
+        "timezone": str(tzinfo),
+        "timezone_source": tz_source,
+        "is_daytime": is_daytime,
+        "solar_zenith_deg": round(float(weather["solar_zenith_deg"]), 2),
+        "weather_regime": str(weather["weather_regime"]),
+    }
+
+
+@router.post("/point-forecast")
+def point_forecast(request: PointForecastRequest) -> dict[str, Any]:
+    """Predict AC energy for one hour at one location.
+
+    The default model is the project's XGBoost, trained offline on measured plant output
+    and fed panel temperature from the NOCT model. Any registry model key instead trains
+    that model on archive data ending strictly before the hour, as before.
+
+    The response carries the hour's energy and its day's total, the weather parameters
+    that drive them, the resolved place, the operating notes, a prediction interval, and
+    either the base models' own predictions (ensemble) or the baselines XGBoost was
+    compared against.
+    """
+    if request.model_key == plant_model.MODEL_KEY:
+        return _plant_point_forecast(request)
+
+    settings = get_settings()
+    system = to_pv_system(request.system)
+
+    location, tzinfo, tz_source, target_utc, local_target, target_date = _resolve_target(request)
 
     earliest_date, latest_date = _coverage_window()
     if not earliest_date <= target_date <= latest_date:
@@ -238,39 +298,11 @@ def point_forecast(request: PointForecastRequest) -> dict[str, Any]:
     training = analysis.training
 
     # ------------------------------------------------------- weather for the target day
-    raw_day = fetch_archive(location, target_date - _DAY_MARGIN, target_date + _DAY_MARGIN)
-    day_features = build_features(
-        raw_day,
-        location,
-        target="pv_kwh",
-        system=system,
-        feature_names=tuple(training.feature_names),
-        daytime_only=False,  # the target hour may be at dusk, and the day total needs both
+    # daytime_only=False: the target hour may be at dusk, and the day total needs both.
+    day_frame = _target_day(
+        location, tzinfo, target_utc, local_target, target_date,
+        target="pv_kwh", system=system, feature_names=tuple(training.feature_names),
     )
-
-    frame = day_features.frame
-    local_index = frame.index.tz_convert(tzinfo)
-    day_frame = frame[local_index.date == target_date]
-    if day_frame.empty:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"The archive returned no complete hourly records for "
-                f"{target_date.isoformat()} at {location.label}. Reanalysis is occasionally "
-                f"incomplete near the publication boundary; try a slightly earlier date."
-            ),
-        )
-
-    if target_utc not in day_frame.index:
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"The archive has no complete record for "
-                f"{local_target.strftime('%Y-%m-%d %H:%M')} at {location.label}. Every "
-                f"weather input has to be present — nothing is imputed — so this hour "
-                f"cannot be predicted. Try another hour on the same day."
-            ),
-        )
 
     # ------------------------------------------------------------------------ predict
     ac_capacity_kwh = system.ac_capacity_kw * HOURS_PER_INTERVAL
