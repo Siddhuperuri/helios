@@ -376,3 +376,48 @@ class TestReuse:
         ).json()
         assert morning["training"]["analysis_id"] == afternoon["training"]["analysis_id"]
         assert morning["kwh_hour"] != afternoon["kwh_hour"]
+
+
+class TestXGBoostProjectModel:
+    """The default model: pre-trained XGBoost fed by NOCT panel temperature."""
+
+    def _post(self, client: TestClient, **overrides):
+        body = _request(model_key="xgboost_plants")
+        body.update(overrides)
+        return client.post("/api/point-forecast", json=body)
+
+    def test_it_is_the_default_model(self, client: TestClient, stub_archive) -> None:
+        body = _request()
+        body.pop("model_key")
+        response = client.post("/api/point-forecast", json=body)
+        assert response.status_code == 200, response.text
+        assert response.json()["model_key"] == "xgboost_plants"
+
+    def test_predicts_with_panel_temperature_and_baselines(
+        self, client: TestClient, stub_archive
+    ) -> None:
+        response = self._post(client)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert 0.0 <= body["kwh_hour"] <= 6.0
+        assert body["kwh_day"] >= body["kwh_hour"]
+        assert body["module_temperature_c"] > body["air_temperature_c"]
+        assert body["system"]["dc_capacity_kwp"] == 5.0
+        assert [b["is_project_model"] for b in body["baselines"]].count(True) == 1
+        assert len(body["baselines"]) == 6
+        assert body["per_model"] == []
+
+    def test_states_the_safe_range_and_wind_cooling(
+        self, client: TestClient, stub_archive
+    ) -> None:
+        keys = {n["key"] for n in self._post(client).json()["operating_conditions"]}
+        assert {"operating_range", "wind_cooling"} <= keys
+
+    def test_night_is_zero(self, client: TestClient, stub_archive) -> None:
+        body = self._post(client, target_datetime=f"{TARGET_DATE.isoformat()}T00:00:00").json()
+        assert body["kwh_hour"] == 0.0
+
+    def test_the_hour_changes_the_answer(self, client: TestClient, stub_archive) -> None:
+        noon = self._post(client, target_datetime=f"{TARGET_DATE.isoformat()}T12:00:00").json()
+        dawn = self._post(client, target_datetime=f"{TARGET_DATE.isoformat()}T06:00:00").json()
+        assert noon["kwh_hour"] != dawn["kwh_hour"]

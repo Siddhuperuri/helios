@@ -223,7 +223,7 @@ describe('the prediction request', () => {
     expect(pointForecast).toHaveBeenCalledWith({
       location: { latitude: 17.385, longitude: 78.4867 },
       target_datetime: '2024-06-20T15:00:00',
-      model_key: 'ensemble_four',
+      model_key: 'xgboost_plants',
     });
   });
 

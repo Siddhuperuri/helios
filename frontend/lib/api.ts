@@ -671,6 +671,8 @@ export interface PointForecastResponse {
   ghi_wm2: number;
   air_temperature_c: number;
   wind_speed_ms: number;
+  /** Present for the XGBoost model: panel temperature from the NOCT model. */
+  module_temperature_c?: number;
   latitude: number;
   longitude: number;
   resolved_place_name: string;
@@ -679,6 +681,9 @@ export interface PointForecastResponse {
   model_display_name: string;
   per_model: ModelContribution[];
   per_model_note: string;
+  /** XGBoost and the baselines, scored on the same held-out week. */
+  baselines?: { model: string; display_name: string; r2: number; mae_kwh: number; is_project_model: boolean }[];
+  cross_plant?: { train_plant: number; test_plant: number; r2: number; mae_kwh: number }[];
   interval: {
     lower_kwh: number | null;
     upper_kwh: number | null;
@@ -703,7 +708,7 @@ export interface PointForecastResponse {
     physics_chain_kwh: number;
     physics_chain_day_kwh: number;
     description: string;
-  };
+  } | null;
   training: {
     analysis_id: string;
     period_start: string;

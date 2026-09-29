@@ -38,9 +38,9 @@ class PointForecastRequest(BaseModel):
     )
     system: PVSystemInput = Field(default_factory=PVSystemInput)
     model_key: str = Field(
-        default="ensemble_four",
+        default="xgboost_plants",
         max_length=64,
-        description="Defaults to the four-model stacking ensemble.",
+        description="Defaults to the project's XGBoost model trained on measured plant output.",
     )
     nominal_coverage: float = Field(default=0.8, ge=0.5, le=0.99)
 
@@ -49,7 +49,7 @@ class PointForecastRequest(BaseModel):
     def _known_model(cls, v: str) -> str:
         from app.models import registry
 
-        if v not in registry.MODELS:
+        if v != "xgboost_plants" and v not in registry.MODELS:
             raise ValueError(
                 f"Unknown model '{v}'. Available models: {', '.join(sorted(registry.MODELS))}."
             )

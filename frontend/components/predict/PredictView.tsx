@@ -45,11 +45,12 @@ import { num } from '@/lib/format';
  */
 
 const MODEL_OPTIONS = [
-  { key: 'ensemble_four', label: 'Four-model stacking ensemble' },
-  { key: 'random_forest', label: 'Random Forest' },
-  { key: 'hist_gradient_boosting', label: 'Histogram Gradient Boosting' },
-  { key: 'extra_trees', label: 'Extremely Randomised Trees' },
-  { key: 'ridge', label: 'Ridge Regression' },
+  { key: 'xgboost_plants', label: 'XGBoost (project model)' },
+  { key: 'ensemble_four', label: 'Baseline: four-model stacking ensemble' },
+  { key: 'random_forest', label: 'Baseline: Random Forest' },
+  { key: 'hist_gradient_boosting', label: 'Baseline: Histogram Gradient Boosting' },
+  { key: 'extra_trees', label: 'Baseline: Extremely Randomised Trees' },
+  { key: 'ridge', label: 'Baseline: Ridge Regression' },
 ];
 
 /** Whole hours only: the weather archive is hourly, so half past is not a real choice. */
@@ -59,7 +60,7 @@ export function PredictView() {
   const [location, setLocation] = useState<Draft['location']>(undefined);
   const [day, setDay] = useState('');
   const [hour, setHour] = useState('13:00');
-  const [modelKey, setModelKey] = useState('ensemble_four');
+  const [modelKey, setModelKey] = useState('xgboost_plants');
 
   const [result, setResult] = useState<PointForecastResponse | null>(null);
   const [running, setRunning] = useState(false);
@@ -106,9 +107,10 @@ export function PredictView() {
           Energy for one hour, at one place, on one date
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-2">
-          Choose where the panels are and which hour you want. A model is trained on weather
-          from before that hour and asked what the array produced in it — so the date and the
-          time genuinely change the answer.
+          Choose where the panels are and which hour you want. Irradiance, air temperature and
+          wind are fetched for that place and time, the NOCT model estimates panel temperature
+          from them, and an XGBoost model trained on measured output from two solar plants
+          predicts what a 5 kW reference system produces.
         </p>
       </header>
 
@@ -157,7 +159,7 @@ export function PredictView() {
               <Field
                 label="Model"
                 htmlFor="predict-model"
-                hint="The ensemble blends all four; the others are single estimators."
+                hint="XGBoost is the project model; the others are comparison baselines."
               >
                 <Select
                   id="predict-model"
@@ -173,15 +175,14 @@ export function PredictView() {
               </Field>
               <div className="flex items-end">
                 <Button variant="primary" onClick={run} disabled={!ready || running}>
-                  {running ? 'Training and predicting…' : 'Predict this hour'}
+                  {running ? 'Predicting…' : 'Predict this hour'}
                 </Button>
               </div>
             </div>
             {running ? (
               <p className="mt-4 text-xs leading-relaxed text-ink-3" role="status">
-                Fitting the model on the archive up to the day before. The first request for
-                a place and date takes up to a minute; asking about another hour of the same
-                day reuses the model and is quick.
+                Fetching weather and predicting. Baseline models are trained per request and
+                can take up to a minute; XGBoost answers as soon as the weather arrives.
               </p>
             ) : null}
           </Panel>
@@ -222,7 +223,7 @@ export function PredictionResult({ result }: { result: PointForecastResponse }) 
         description={`Predicted by ${result.model_display_name} for the declared ${num(
           result.system.dc_capacity_kwp,
           1,
-        )} kWp array, from weather ending before this hour.`}
+        )} kWp array.`}
       >
         <MetricGrid cols={4}>
           <Metric
@@ -256,10 +257,10 @@ export function PredictionResult({ result }: { result: PointForecastResponse }) 
 
       <Section
         label="Conditions"
-        title="The three parameters that drive it"
+        title="The inputs that drive it"
         description="Sunlight supplies the energy; temperature takes some of it back through the module's temperature coefficient; wind gives it back by cooling the module."
       >
-        <MetricGrid cols={3}>
+        <MetricGrid cols={result.module_temperature_c != null ? 4 : 3}>
           <Metric
             label="Sun intensity"
             value={num(result.ghi_wm2, 0)}
@@ -278,6 +279,14 @@ export function PredictionResult({ result }: { result: PointForecastResponse }) 
             unit="°C"
             hint="Ambient air, not the module surface."
           />
+          {result.module_temperature_c != null ? (
+            <Metric
+              label="Panel temperature"
+              value={num(result.module_temperature_c, 1)}
+              unit="°C"
+              hint="Estimated by the NOCT model, with wind cooling."
+            />
+          ) : null}
         </MetricGrid>
       </Section>
 
@@ -315,10 +324,13 @@ export function PredictionResult({ result }: { result: PointForecastResponse }) 
 
       <Section label="Provenance" title="Where this number comes from">
         <div className="space-y-3">
-          <Callout tone="warning" title="Modelled, not metered">
+          <Callout
+            tone={result.model_key === 'xgboost_plants' ? 'info' : 'warning'}
+            title={result.model_key === 'xgboost_plants' ? 'Trained on measured output' : 'Modelled, not metered'}
+          >
             {result.label_provenance}
           </Callout>
-          <Callout tone="info" title="No future data was used">
+          <Callout tone="info" title={result.model_key === 'xgboost_plants' ? 'How it was validated' : 'No future data was used'}>
             {result.training.leakage_rule}
           </Callout>
           <Callout tone="info" title="Interval">
@@ -355,6 +367,40 @@ function ModelBreakdown({ result }: { result: PointForecastResponse }) {
         <Callout tone="info" title={result.model_display_name}>
           {result.per_model_note}
         </Callout>
+        {result.baselines?.length ? (
+          <Panel>
+            <p className="mb-3 text-xs text-ink-3">
+              Held-out week, scored on the same data (kWh per 15 minutes).
+            </p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-2xs text-ink-4">
+                  <th className="pb-2 font-normal">Model</th>
+                  <th className="pb-2 text-right font-normal">R²</th>
+                  <th className="pb-2 text-right font-normal">MAE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.baselines.map((b) => (
+                  <tr key={b.model} className={b.is_project_model ? 'font-medium text-solar' : 'text-ink-2'}>
+                    <td className="py-1">{b.display_name}</td>
+                    <td className="num py-1 text-right tabular-nums">{num(b.r2, 3)}</td>
+                    <td className="num py-1 text-right tabular-nums">{num(b.mae_kwh, 3)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {result.cross_plant?.length ? (
+              <p className="mt-4 border-t border-line pt-3 text-xs leading-relaxed text-ink-2">
+                On a plant it was not trained on, XGBoost scores lower:{' '}
+                {result.cross_plant
+                  .map((c) => `Plant ${c.train_plant} → ${c.test_plant}: R² ${num(c.r2, 2)}`)
+                  .join(' · ')}
+                .
+              </p>
+            ) : null}
+          </Panel>
+        ) : null}
       </Section>
     );
   }

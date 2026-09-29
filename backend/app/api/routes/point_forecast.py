@@ -226,6 +226,130 @@ def _target_payload(
     }
 
 
+def _plant_point_forecast(request: PointForecastRequest) -> dict[str, Any]:
+    """The project's model: pre-trained XGBoost fed by the NOCT panel temperature.
+
+    Nothing is trained per request. Weather for the target's local day comes from the
+    archive, panel temperature is derived from it, and the saved estimator answers for
+    every daylight hour of that day, so the hour and its day total come from one pass.
+    """
+    settings = get_settings()
+    try:
+        m = plant_model.load()
+    except plant_model.PlantModelUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    location, tzinfo, tz_source, target_utc, local_target, target_date = _resolve_target(request)
+    earliest = date.fromisoformat(settings.limits.earliest_date)
+    latest = latest_available_archive_date()
+    if not earliest <= target_date <= latest:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"{target_date.isoformat()} is outside the period the weather archive covers. "
+                f"Choose a date between {earliest.isoformat()} and {latest.isoformat()}."
+            ),
+        )
+
+    system = PVSystem()  # the 5 kW reference system the model was normalised to
+    day_frame = _target_day(location, tzinfo, target_utc, local_target, target_date,
+                            target="pv_kwh", system=system)
+
+    daytime = day_frame["is_daytime"].to_numpy(dtype=bool)
+    out = plant_model.predict_hourly(
+        day_frame["ghi_wm2"].to_numpy(), day_frame["temperature_c"].to_numpy(),
+        day_frame["wind_speed_ms"].to_numpy(), daytime=daytime,
+    )
+    position = int(day_frame.index.get_loc(target_utc))
+    hour_is_daytime = bool(daytime[position]) and float(day_frame["ghi_wm2"].iloc[position]) > 0
+    kwh_hour = float(out["kwh"][position])
+    weather = day_frame.iloc[position]
+    module_c = float(out["module_temp_c"][position])
+
+    warnings: list[str] = [
+        "The model predicts for the 5 kW reference system it was trained on; a different "
+        "array size is not applied."
+    ]
+    if not hour_is_daytime:
+        warnings.append(
+            f"The sun is below the horizon at {local_target.strftime('%H:%M')} local time, "
+            f"so the array produces nothing in this hour. The day total is unaffected."
+        )
+    if len(day_frame) < 24:
+        warnings.append(
+            f"Only {len(day_frame)} of 24 hours were available for {target_date.isoformat()}, "
+            f"so the daily total covers part of the day."
+        )
+    cp = plant_model.cross_plant_range()
+    if cp:
+        warnings.append(
+            f"Accuracy drops on a plant the model has not seen: R² {cp[0]:.2f}–{cp[1]:.2f} "
+            f"when trained on one plant and tested on the other, against "
+            f"{m.metrics['holdout']['r2']:.2f} on the held-out week."
+        )
+
+    h = m.metrics["holdout"]
+    return {
+        "kwh_hour": round(kwh_hour, 3),
+        "kwh_day": round(float(out["kwh"].sum()), 3),
+        "ghi_wm2": round(float(weather["ghi_wm2"]), 1),
+        "air_temperature_c": round(float(weather["temperature_c"]), 1),
+        "wind_speed_ms": round(float(weather["wind_speed_ms"]), 2),
+        "module_temperature_c": round(module_c, 1),
+        "latitude": location.latitude,
+        "longitude": location.longitude,
+        "resolved_place_name": location.label,
+        "location": location.to_dict(),
+        "model_key": plant_model.MODEL_KEY,
+        "model_display_name": plant_model.DISPLAY_NAME,
+        "per_model": [],
+        "per_model_note": (
+            "XGBoost is the project's single model. Random Forest, Extremely Randomized "
+            "Trees, Histogram Gradient Boosting and Ridge Regression are comparison "
+            "baselines, scored on the same held-out week below."
+        ),
+        "baselines": plant_model.baselines(),
+        "cross_plant": m.metrics.get("cross_plant", []),
+        "interval": plant_model.interval(
+            kwh_hour, nominal_coverage=request.nominal_coverage, is_daytime=hour_is_daytime
+        ),
+        "operating_conditions": plant_model.operating_notes(
+            float(weather["ghi_wm2"]), float(weather["temperature_c"]),
+            float(weather["wind_speed_ms"]), module_c,
+        ),
+        "target": _target_payload(
+            request, tzinfo, tz_source, target_utc, local_target, weather, hour_is_daytime
+        ),
+        "system": system.describe(),
+        "hours_in_day": int(len(day_frame)),
+        "n_clipped_to_physical_bounds": int(out["n_clipped"]),
+        "reference": None,
+        "training": {
+            "analysis_id": "",
+            "period_start": m.metrics["train_period"][0],
+            "period_end": m.metrics["train_period"][1],
+            "n_train": m.metrics["n_train"],
+            "n_test": m.metrics["n_test"],
+            "hold_out_rmse_kwh": h["rmse_kwh"],
+            "hold_out_mae_kwh": h["mae_kwh"],
+            "hold_out_r2": h["r2"],
+            "skill_scores": {},
+            "leakage_rule": (
+                f"Trained offline on {m.metrics['train_period'][0]} to "
+                f"{m.metrics['train_period'][1]}; scored on the last {m.metrics['holdout_days']} "
+                f"days ({m.metrics['test_period'][0]} to {m.metrics['test_period'][1]}), held "
+                f"out in date order."
+            ),
+        },
+        "label_provenance": (
+            "The labels are metered: the model learned from measured inverter output at two "
+            "solar plants, rescaled to a 5 kW reference system. Panel temperature is "
+            "derived from the NOCT model, not measured."
+        ),
+        "warnings": warnings,
+    }
+
+
 @router.post("/point-forecast")
 def point_forecast(request: PointForecastRequest) -> dict[str, Any]:
     """Predict AC energy for one hour at one location.
