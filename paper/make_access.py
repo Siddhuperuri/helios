@@ -48,10 +48,7 @@ else:
 front.append(P("Quantifying Three Evaluation Pitfalls in Machine-Learning "
                "Solar Forecasting: Split Optimism, Interval-Label Phase Error, "
                "and Prediction-Interval Miscalibration", "title"))
-front.append(P("T. HARSHINI SOWMYA<super>1</super>, M. LAVANYA DURGA<super>1</super>, "
-               "P. J. S. SIDDHARTHA<super>1</super>,<br/>"
-               "M. AJAY PRAKASH<super>1</super>, P. MARUTHI SREERAM<super>1</super>, "
-               "AND K. SURYA PRAKASH<super>1</super>", "authors"))
+front.append(P("ANONYMOUS AUTHORS<super>1</super>", "authors"))
 front.append(P("<super>1</super>Department of Computer Science and Engineering, "
                "&lt;Institution Name&gt;, &lt;City&gt;, &lt;PIN&gt;, India", "affil"))
 front.append(P("Corresponding author: &lt;Author Name&gt; "
@@ -637,8 +634,7 @@ for i, r in enumerate(REFS, 1):
 body.append(Spacer(1, 8))
 BIO_STUB = ("&lt;ADD BIOGRAPHY: degree(s) received, institution, year, current "
             "role, and research interests. Two to four sentences.&gt;")
-for nm in ["T. HARSHINI SOWMYA", "M. LAVANYA DURGA", "P. J. S. SIDDHARTHA",
-           "M. AJAY PRAKASH", "P. MARUTHI SREERAM", "K. SURYA PRAKASH"]:
+for nm in ["ANONYMOUS AUTHORS"]:
     body.append(bio(nm, BIO_STUB))
 body.append(Paragraph('<para alignment="right">'
                       '<font color="#0073AE" size="11">&#9679; &#9679; &#9679;</font>'
@@ -710,7 +706,7 @@ doc = BaseDocTemplate(
     leftMargin=LM, rightMargin=RM, topMargin=BODY_TOP, bottomMargin=BODY_BOT,
     title="Quantifying Three Evaluation Pitfalls in Machine-Learning Solar "
           "Forecasting",
-    author="T. Harshini Sowmya et al.",
+    author="Anonymous Authors",
     subject="IEEE Access format draft",
 )
 

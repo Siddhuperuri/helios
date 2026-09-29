@@ -132,8 +132,7 @@ story.append(Paragraph(
     "Interval-Label Phase Error, and Prediction-Interval Miscalibration",
     S["title"]))
 story.append(Paragraph(
-    "T. Harshini Sowmya, M. Lavanya Durga, P. J. S. Siddhartha, "
-    "M. Ajay Prakash, P. Maruthi Sreeram, and K. Surya Prakash", S["auth"]))
+    "Anonymous Authors", S["auth"]))
 story.append(Spacer(1, 4))
 story.append(Paragraph(
     "Department of Computer Science and Engineering<br/>"
