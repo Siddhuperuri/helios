@@ -247,12 +247,15 @@ that is what makes them baselines — and are held to the same horizon accountin
 
 ## 7. Models
 
-Four estimators, plus one ensemble of exactly those four. Every entry appears in at least
+**XGBoost is the project's model** (§7b). It is trained on measured plant output and serves the
+web interface by default. The five entries below are comparison baselines, scored on the same
+held-out data. Four estimators, plus one ensemble of exactly those four. Every entry appears in at least
 one supplied paper, and where a paper reports tuned hyperparameters those exact values are
 used and attributed.
 
 | Key | Family | Why it is in the set |
 |---|---|---|
+| `xgboost_plants` | Boosted trees, regularised | **The project model.** Trained offline on measured output from two plants, fed panel temperature from the NOCT model. Chosen for built-in regularisation and use in the solar forecasting literature ([P2], [P3]). |
 | `random_forest` | Bagged trees | The method the project abstract names. |
 | `hist_gradient_boosting` | Boosted trees | The boosted-tree family the cited papers use ([P2], [P3] run XGBoost). Boosting and bagging fail differently, so one of each is informative rather than redundant. |
 | `extra_trees` | Bagged trees | Randomised split thresholds decorrelate its errors from the forest's — which is exactly what makes it worth something to an ensemble. |
@@ -288,8 +291,9 @@ model then maps weather and solar geometry straight onto that energy. Features a
 no lagged target values are used, and night hours are excluded at zenith ≥ 87° exactly as
 before.
 
-**The labels are modelled, not metered.** No measured generation was available to fit
-against, so every kilowatt-hour reported this way carries the chain's assumptions as well as
+**For the `ensemble_four` and single-baseline paths, the labels are modelled, not metered.** The default
+XGBoost model is the exception: it is trained on measured plant output (§7b). With no measured
+generation to fit against, every kilowatt-hour reported on those paths carries the chain's assumptions as well as
 the model's error. That is limitation 2 in §10, and it is repeated in the model card and in
 every `/api/point-forecast` response rather than left in the documentation.
 
@@ -304,21 +308,58 @@ hour — and the number of clipped predictions is reported.
 ## 7b. Predicting a specific date and time
 
 `POST /api/point-forecast` answers the question the interface always implied: *how much will
-this array make at two o'clock on the fourteenth?* An analysis's `start_date` and `end_date`
-bound the period a model is **trained** on, and `/analysis/{id}/forecast` runs forward from
-now over a horizon; neither takes a target datetime.
+this array make at two o'clock on the fourteenth?* It is the path the web page at `/predict`
+drives, and it is the pipeline the project abstract describes:
 
-Give it a place, a local date and hour, optionally a system, and a model (`ensemble_four` by
-default). It trains on archive data ending strictly before that hour with `target="pv_kwh"`,
-predicts the hour and its day, and returns the energy, the three driving parameters (sun
-intensity, wind speed, air temperature), the resolved place and coordinates, the operating
-conditions, a prediction interval, and each base model's own prediction beside the ensemble's.
+```
+place (city name, GPS or map pin) + local date + hour
+  -> irradiance, air temperature and wind speed from Open-Meteo for that place and time
+  -> panel temperature from the NOCT model (wind cooling enters here)
+  -> XGBoost on (irradiance, air temperature, panel temperature)
+  -> energy in kWh for a 5 kW reference system
+```
 
-The training window ends the day before the target date, so nothing the model saw is
-contemporaneous with or later than the hour being predicted; the chronological split, the
-24-hour embargo and the five-check leakage audit are unchanged underneath. Because the
-prediction is made from reanalysis weather, a datetime the archive does not cover is refused
-with a message naming the window that is available. The page at `/predict` drives it.
+**The default model is XGBoost** (`xgboost_plants`), trained offline by
+`train_model_plants.py` on measured inverter output from two solar plants (44 inverters,
+rescaled to a 5 kW reference system) and saved with its hold-out results in
+`backend/app/models/artifacts/`. Nothing is trained per request, so an answer takes as long
+as the weather fetch. Random Forest, Extremely Randomized Trees, Histogram Gradient Boosting
+and Ridge Regression, and their stacking ensemble, are kept only as comparison baselines,
+scored on the same held-out week:
+
+| Model | R² | MAE (kWh per 15 min) |
+|---|---|---|
+| **XGBoost (project model)** | 0.856 | 0.0399 |
+| Random Forest | 0.862 | 0.0391 |
+| Extremely Randomized Trees | 0.862 | 0.0387 |
+| Histogram Gradient Boosting | 0.861 | 0.0391 |
+| Stacking ensemble of the four | 0.861 | 0.0431 |
+| Ridge Regression | 0.822 | 0.0753 |
+
+The tree models sit within 0.006 R² of each other. XGBoost was chosen for its built-in
+regularisation and its use in the solar forecasting literature, not for a lead in accuracy.
+The last seven days of the data were held out in date order (11-17 June 2020).
+
+**Accuracy drops on a plant the model has not seen.** Trained on Plant 1 and tested on
+Plant 2, XGBoost scores R² 0.52; trained on Plant 2 and tested on Plant 1, 0.73 — against 0.86
+on the held-out week. The response and the page both report this rather than leaving it in
+the documentation.
+
+The response carries the hour's energy and its day's total, the inputs (irradiance, air
+temperature, wind speed, panel temperature), the resolved place and coordinates, operating
+insights (safe operating range, wind cooling, thermal derating, each with its threshold
+stated), a prediction interval taken from the hourly hold-out errors, and the baselines table.
+Insights use an 85 °C panel limit (IEC 61215 test limit) and a 20 m/s wind stow threshold.
+
+Two limits are stated in every payload. The model predicts for the 5 kW reference system it was
+trained on, so a different declared capacity is reported, not applied. And because the weather
+comes from the archive (reanalysis, about a week behind), a datetime it does not cover is
+refused with a message naming the window that is available.
+
+Any other registry key (`ensemble_four`, `random_forest`, ...) is still accepted and takes the
+older path: train that model on archive data ending strictly before the hour, with
+`target="pv_kwh"`, chronological split and 24-hour embargo. Those labels are modelled, not
+metered (§7a).
 
 ## 8. Metrics
 
@@ -460,7 +501,7 @@ target the ways each of those could go quietly wrong:
 | File | What it pins down |
 |---|---|
 | `test_models.py` | the registry holds exactly five entries and each withdrawn key stays withdrawn; the ensemble's weights are learned rather than uniform and every base model reports its own prediction; the ensemble's inner folds partition the training rows, which is what `cross_val_predict` requires and what decides their shape; a `pv_kwh` run reports kilowatt-hours on both sides with no W/m² twin, gets persistence and climatology only, and still passes the five-check leakage audit; the irradiance path publishes exactly the columns, units and baselines it always did |
-| `test_point_forecast.py` | the requested hour is read in the location's time zone and changes the answer; the training window ends strictly before the target hour and no fetched window reaches the target date; a night hour returns zero and says why; four base models are reported beside the ensemble; a date outside the archive is refused with the window that is available named; a repeat question reuses the trained model instead of paying for it twice |
+| `test_point_forecast.py` | the requested hour is read in the location's time zone and changes the answer; the training window ends strictly before the target hour and no fetched window reaches the target date; a night hour returns zero and says why; four base models are reported beside the ensemble; a date outside the archive is refused with the window that is available named; a repeat question reuses the trained model instead of paying for it twice; XGBoost is the default, reports panel temperature and the baselines table, states the safe range and wind cooling, and returns zero at night |
 
 `test_cross_instance.py` is the one that earns its keep. It builds two complete application
 objects against the same infrastructure and proves a rate limit is one shared budget rather
@@ -482,8 +523,8 @@ stops rather than looping.
 
 `predict.test.tsx` pins the promises of the prediction page: that the chosen hour reaches
 the server rather than only the chosen date, that a different hour produces a different
-request, that all four base models and their learned weights stay on the page beside the
-ensemble, and that the "modelled, not metered" and no-future-data statements survive.
+request, that XGBoost is the default model, that the baselines table and cross-plant scores
+stay on the page, and that the provenance statements survive.
 
 ### Configuration
 

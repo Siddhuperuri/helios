@@ -197,7 +197,7 @@ a model to forecast hour-ahead irradiance would cost 30 seconds to say the same 
 an annual average.
 
 ML earns its place on the forward-looking path — `/advanced`, `/api/analysis`,
-`/api/point-forecast` — where predicting a specific day and hour is the actual task. That path is the hybrid the brief
+`/api/point-forecast` (default model: XGBoost trained on measured plant output, README §7b) — where predicting a specific day and hour is the actual task. That path is the hybrid the brief
 describes and predates this work:
 
 ```

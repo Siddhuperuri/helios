@@ -101,13 +101,14 @@ Parameters listed as **No** are surfaced in the UI parameter dictionary as
 
 ## 5. Models — evidence and inclusion
 
-The set was reduced to four estimators and one ensemble of those four. What follows records
+The project's model is XGBoost, trained on measured plant output. The models below are the comparison baselines: four estimators and one ensemble of those four. What follows records
 both the evidence for each model and, where a model was withdrawn, why the evidence did not
 make it load-bearing. A longer table is not a stronger result: a reader given ten rows looks
 for the best number, where a reader given five asks whether the complexity was necessary.
 
 | Model | Evidence | Sources | Included | Rationale |
 |---|---|---|---|---|
+| XGBoost | **A** | P2, P3 (XGBoost), **abstract** | **Yes - the project model** | Trained on measured plant output and served by default. Chosen for built-in regularisation and use in the solar forecasting literature. Scored against the five models below on a held-out week (R² 0.856 against 0.862 for the best tree baseline) and across plants (R² 0.52-0.73). |
 | Random Forest | **A** | P2, P4, P5, **abstract** | **Yes** | Named by the project abstract as the core method. |
 | Histogram Gradient Boosting | **A** | P2, P3 (XGBoost); P4, P5 (boosting) | **Yes** | The boosted-tree family the cited papers use. Boosting fits residuals sequentially where bagging averages independent fits, so it fails differently from the forest rather than redundantly. |
 | Extra Trees | **B** | Ensemble family of P4 | **Yes** | Randomised split thresholds decorrelate its errors from RF's — the property that makes it useful inside an ensemble. |
