@@ -46,3 +46,6 @@ deploy/nginx/certs/
 *.log
 .DS_Store
 Thumbs.db
+
+# Serena (MCP tool) local state
+.serena/
